@@ -1,0 +1,111 @@
+<svg viewBox="0 0 500 400" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="500" height="400" fill="#f8fafc"/>
+  
+  <!-- Base -->
+  <rect x="90" y="320" width="60" height="40" fill="#6b7280" rx="5"/>
+  <circle cx="120" cy="340" r="8" fill="#374151"/>
+  
+  <!-- Joint 1 (shoulder) -->
+  <circle cx="120" cy="240" r="12" fill="#ef4444" stroke="#dc2626" stroke-width="2"/>
+  
+  <!-- Link 1 -->
+  <rect x="115" y="140" width="10" height="100" fill="#3b82f6" rx="5"/>
+  
+  <!-- Joint 2 (elbow) -->
+  <circle cx="220" cy="140" r="10" fill="#ef4444" stroke="#dc2626" stroke-width="2"/>
+  
+  <!-- Link 2 -->
+  <rect x="215" y="135" width="80" height="10" fill="#10b981" rx="5"/>
+  
+  <!-- End-effector -->
+  <circle cx="300" cy="140" r="8" fill="#f59e0b" stroke="#d97706" stroke-width="2"/>
+  
+  <!-- Coordinate system at base -->
+  <g id="base-coordinates">
+    <!-- x-axis -->
+    <line x1="50" y1="370" x2="90" y2="370" stroke="#374151" stroke-width="2" marker-end="url(#arrowhead)"/>
+    <text x="95" y="375" font-family="Arial, sans-serif" font-size="12" fill="#374151" font-weight="bold">x</text>
+    
+    <!-- y-axis -->
+    <line x1="50" y1="370" x2="50" y2="330" stroke="#374151" stroke-width="2" marker-end="url(#arrowhead)"/>
+    <text x="45" y="325" font-family="Arial, sans-serif" font-size="12" fill="#374151" font-weight="bold">y</text>
+    
+    <!-- Origin -->
+    <circle cx="50" cy="370" r="2" fill="#374151"/>
+    <text x="35" y="385" font-family="Arial, sans-serif" font-size="10" fill="#374151">O</text>
+  </g>
+  
+  <!-- Length dimensions -->
+  <g id="length-dimensions">
+    <!-- L1 dimension -->
+    <line x1="140" y1="240" x2="140" y2="140" stroke="#6366f1" stroke-width="1"/>
+    <polygon points="140,240 135,234 145,234" fill="#6366f1"/>
+    <polygon points="140,140 135,146 145,146" fill="#6366f1"/>
+    <text x="150" y="195" font-family="Arial, sans-serif" font-size="14" fill="#6366f1" font-weight="bold">L₁</text>
+    
+    <!-- L2 dimension -->
+    <line x1="220" y1="120" x2="300" y2="120" stroke="#059669" stroke-width="1"/>
+    <polygon points="220,120 226,115 226,125" fill="#059669"/>
+    <polygon points="300,120 294,115 294,125" fill="#059669"/>
+    <text x="255" y="115" font-family="Arial, sans-serif" font-size="14" fill="#059669" font-weight="bold">L₂</text>
+  </g>
+  
+  <!-- Angle arcs -->
+  <g id="angle-arcs">
+    <!-- θ₁ (shoulder angle) -->
+    <path d="M 120 200 A 40 40 0 0 1 140 170" stroke="#ef4444" stroke-width="2" fill="none" stroke-dasharray="5,5"/>
+    <text x="155" y="190" font-family="Arial, sans-serif" font-size="14" fill="#ef4444" font-style="italic" font-weight="bold">θ₁</text>
+    
+    <!-- θ₂ (elbow angle) -->
+    <path d="M 200 140 A 20 20 0 0 0 240 140" stroke="#ef4444" stroke-width="2" fill="none" stroke-dasharray="5,5"/>
+    <text x="220" y="125" font-family="Arial, sans-serif" font-size="14" fill="#ef4444" font-style="italic" font-weight="bold">θ₂</text>
+  </g>
+  
+  <!-- Target position -->
+  <g id="target">
+    <circle cx="350" cy="200" r="6" fill="none" stroke="#f59e0b" stroke-width="3" stroke-dasharray="4,4"/>
+    <text x="360" y="205" font-family="Arial, sans-serif" font-size="12" fill="#f59e0b" font-weight="bold">Target (x,y)</text>
+    
+    <!-- Dashed line from end-effector to target -->
+    <line x1="300" y1="140" x2="350" y2="200" stroke="#f59e0b" stroke-width="1" stroke-dasharray="3,3"/>
+  </g>
+  
+  <!-- Joint labels -->
+  <text x="130" y="245" font-family="Arial, sans-serif" font-size="10" fill="#dc2626" font-weight="bold">Joint 1</text>
+  <text x="230" y="135" font-family="Arial, sans-serif" font-size="10" fill="#dc2626" font-weight="bold">Joint 2</text>
+  <text x="310" y="135" font-family="Arial, sans-serif" font-size="10" fill="#d97706" font-weight="bold">End-effector</text>
+  
+  <!-- Workspace boundary (dashed circle) -->
+  <circle cx="120" cy="240" r="180" fill="none" stroke="#9ca3af" stroke-width="1" stroke-dasharray="8,8" opacity="0.5"/>
+  <text x="280" y="80" font-family="Arial, sans-serif" font-size="10" fill="#6b7280">Workspace boundary</text>
+  
+  <!-- Title and equations -->
+  <text x="250" y="25" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#1f2937">2-Link Robot Arm Kinematics</text>
+  
+  <!-- Forward kinematics equations -->
+  <g id="equations">
+    <text x="20" y="50" font-family="Arial, sans-serif" font-size="12" fill="#374151" font-weight="bold">Forward Kinematics:</text>
+    <text x="20" y="70" font-family="Arial, sans-serif" font-size="11" fill="#374151">x = L₁cos(θ₁) + L₂cos(θ₁ + θ₂)</text>
+    <text x="20" y="85" font-family="Arial, sans-serif" font-size="11" fill="#374151">y = L₁sin(θ₁) + L₂sin(θ₁ + θ₂)</text>
+    
+    <text x="20" y="110" font-family="Arial, sans-serif" font-size="12" fill="#ef4444" font-weight="bold">Inverse Kinematics:</text>
+    <text x="20" y="130" font-family="Arial, sans-serif" font-size="11" fill="#ef4444">Given (x,y) → Find (θ₁, θ₂)</text>
+  </g>
+  
+  <!-- Problem illustration -->
+  <rect x="350" y="280" width="140" height="100" fill="#fef3c7" stroke="#f59e0b" stroke-width="1" rx="8"/>
+  <text x="420" y="300" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#92400e" font-weight="bold">Inverse Kinematics</text>
+  <text x="420" y="315" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#92400e">Challenge:</text>
+  <text x="355" y="330" font-family="Arial, sans-serif" font-size="10" fill="#92400e">• Multiple solutions</text>
+  <text x="355" y="345" font-family="Arial, sans-serif" font-size="10" fill="#92400e">• Unreachable targets</text>
+  <text x="355" y="360" font-family="Arial, sans-serif" font-size="10" fill="#92400e">• Singularities</text>
+  <text x="355" y="375" font-family="Arial, sans-serif" font-size="10" fill="#92400e">• Joint limits</text>
+  
+  <!-- Arrow markers -->
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#374151"/>
+    </marker>
+  </defs>
+</svg>

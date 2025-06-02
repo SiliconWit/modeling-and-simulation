@@ -1,0 +1,130 @@
+<svg viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f0f9ff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ecfdf5;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Arrow marker -->
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" 
+            refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#10b981" />
+    </marker>
+  </defs>
+  
+  <rect width="800" height="400" fill="url(#bgGradient)"/>
+  
+  <!-- Title -->
+  <text x="400" y="30" text-anchor="middle" font-family="Arial, sans-serif" 
+        font-size="24" font-weight="bold" fill="#1f2937">
+    Modeling &amp; Simulation: From Reality to Code
+  </text>
+  
+  <!-- Real World Systems (Left Side) -->
+  <g id="realworld">
+    <rect x="50" y="70" width="200" height="260" rx="10" fill="#ffffff" 
+          stroke="#10b981" stroke-width="2" opacity="0.9"/>
+    <text x="150" y="95" text-anchor="middle" font-family="Arial, sans-serif" 
+          font-size="16" font-weight="bold" fill="#10b981">Real World Systems</text>
+    
+    <!-- Pendulum -->
+    <g transform="translate(80, 120)">
+      <line x1="30" y1="0" x2="30" y2="40" stroke="#374151" stroke-width="2"/>
+      <circle cx="30" cy="50" r="8" fill="#ef4444"/>
+      <line x1="30" y1="5" x2="30" y2="50" stroke="#374151" stroke-width="2"/>
+      <text x="60" y="30" font-family="Arial, sans-serif" font-size="12" fill="#374151">Pendulum</text>
+    </g>
+    
+    <!-- Spring-Mass System -->
+    <g transform="translate(80, 180)">
+      <rect x="0" y="15" width="15" height="10" fill="#6b7280"/>
+      <!-- Spring coils -->
+      <path d="M15,20 Q20,15 25,20 Q30,25 35,20 Q40,15 45,20" 
+            stroke="#374151" stroke-width="2" fill="none"/>
+      <rect x="45" y="15" width="15" height="10" fill="#3b82f6"/>
+      <text x="65" y="25" font-family="Arial, sans-serif" font-size="12" fill="#374151">Spring-Mass</text>
+    </g>
+    
+    <!-- Robot Arm -->
+    <g transform="translate(80, 240)">
+      <rect x="10" y="15" width="30" height="4" fill="#8b5cf6"/>
+      <circle cx="40" cy="17" r="3" fill="#374151"/>
+      <rect x="40" y="14" width="25" height="4" fill="#8b5cf6" transform="rotate(30 40 17)"/>
+      <text x="70" y="25" font-family="Arial, sans-serif" font-size="12" fill="#374151">Robot Arm</text>
+    </g>
+  </g>
+  
+  <!-- Arrow 1: Real World to Math -->
+  <path d="M270 200 L330 200" stroke="#10b981" stroke-width="3" 
+        fill="none" marker-end="url(#arrowhead)"/>
+  <text x="300" y="190" text-anchor="middle" font-family="Arial, sans-serif" 
+        font-size="12" fill="#10b981" font-weight="bold">Model</text>
+  
+  <!-- Mathematical Models (Center) -->
+  <g id="mathmodels">
+    <rect x="350" y="70" width="200" height="260" rx="10" fill="#ffffff" 
+          stroke="#10b981" stroke-width="2" opacity="0.9"/>
+    <text x="450" y="95" text-anchor="middle" font-family="Arial, sans-serif" 
+          font-size="16" font-weight="bold" fill="#10b981">Mathematical Models</text>
+    
+    <!-- Differential Equation -->
+    <g transform="translate(370, 120)">
+      <text x="0" y="0" font-family="Arial, sans-serif" font-size="14" fill="#374151">
+        <tspan x="0" dy="0">θ̈ + (g/L)sin(θ) = 0</tspan>
+        <tspan x="0" dy="20">F = -kx - cẋ</tspan>
+        <tspan x="0" dy="20">τ = J·α</tspan>
+      </text>
+    </g>
+    
+    <!-- Graph representation -->
+    <g transform="translate(370, 200)">
+      <rect x="0" y="0" width="120" height="80" fill="#f9fafb" stroke="#d1d5db"/>
+      <polyline points="10,60 30,40 50,45 70,25 90,30 110,15" 
+                stroke="#10b981" stroke-width="2" fill="none"/>
+      <text x="60" y="75" text-anchor="middle" font-family="Arial, sans-serif" 
+            font-size="10" fill="#6b7280">System Response</text>
+    </g>
+  </g>
+  
+  <!-- Arrow 2: Math to Simulation -->
+  <path d="M570 200 L630 200" stroke="#10b981" stroke-width="3" 
+        fill="none" marker-end="url(#arrowhead)"/>
+  <text x="600" y="190" text-anchor="middle" font-family="Arial, sans-serif" 
+        font-size="12" fill="#10b981" font-weight="bold">Simulate</text>
+  
+  <!-- Simulations (Right Side) -->
+  <g id="simulations">
+    <rect x="650" y="70" width="130" height="260" rx="10" fill="#ffffff" 
+          stroke="#10b981" stroke-width="2" opacity="0.9"/>
+    <text x="715" y="95" text-anchor="middle" font-family="Arial, sans-serif" 
+          font-size="16" font-weight="bold" fill="#10b981">Simulation Code</text>
+    
+    <!-- Code snippet -->
+    <g transform="translate(660, 120)">
+      <rect x="0" y="0" width="110" height="60" fill="#1f2937" rx="4"/>
+      <text font-family="monospace" font-size="9" fill="#10b981">
+        <tspan x="5" y="12">import numpy as np</tspan>
+        <tspan x="5" y="24">import matplotlib</tspan>
+        <tspan x="5" y="36"># Solve equations</tspan>
+        <tspan x="5" y="48">animate_system()</tspan>
+      </text>
+    </g>
+    
+    <!-- Animated visualization -->
+    <g transform="translate(660, 200)">
+      <rect x="0" y="0" width="110" height="80" fill="#000000" rx="4"/>
+      <circle cx="55" cy="40" r="15" fill="#ef4444" opacity="0.8"/>
+      <text x="55" y="75" text-anchor="middle" font-family="Arial, sans-serif" 
+            font-size="10" fill="#ffffff">Interactive Plot</text>
+    </g>
+  </g>
+  
+  <!-- Bottom workflow -->
+  <g transform="translate(50, 360)">
+    <text x="0" y="0" font-family="Arial, sans-serif" 
+          font-size="14" fill="#6b7280" font-weight="bold">Learn by Building</text>
+    <text x="400" y="0" text-anchor="middle" font-family="Arial, sans-serif" 
+          font-size="14" fill="#10b981" font-weight="bold">Observe → Model → Code → Visualize</text>
+  </g>
+</svg>
