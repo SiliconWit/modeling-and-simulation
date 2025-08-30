@@ -1,99 +1,244 @@
 ---
 title: Modeling and Simulation
-description: Learn to create mathematical models and simulate complex systems for engineering analysis and design
+description: Mathematical modeling and computational simulation for engineering system analysis and design optimization
 ---
 
-import { Card, CardGrid } from '@astrojs/starlight/components';
+import { Card, CardGrid, Badge, Steps } from '@astrojs/starlight/components';
 import { Tabs, TabItem } from '@astrojs/starlight/components';
-import { Steps } from '@astrojs/starlight/components';
+import Copyright from '../../../../components/Copyright.astro';
 
-<div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-![Modeling and Simulation Overview](./images/modeling-simulation-overview.svg)
+<div style="display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem;">
+<Badge text="Computational Course" variant="success" />
+<Badge text="System Modeling" variant="note" />
+<Badge text="Simulation Methods" variant="tip" />
+<Badge text="Engineering Analysis" variant="caution" />
 </div>
 
-Master mathematical modeling and simulation through practical, everyday systems that you can see and understand.
+Modeling and Simulation provides essential skills for creating mathematical representations of engineering systems and using computational tools to analyze, predict, and optimize system behavior. This course bridges theoretical concepts with practical simulation techniques.
 
-## Learning Path
-
-<Steps>
-1. **Model Simple Systems**
-   Start with familiar mechanical and physical systems from daily life.
-
-2. **Build Working Simulations**
-   Create interactive simulations that demonstrate real behavior.
-
-3. **Solve Practical Problems**
-   Apply modeling skills to engineering challenges you might actually encounter.
-</Steps>
-
-## Course Structure
-
-<Tabs>
-  <TabItem label="Foundations">
-    <Steps>
-    1. **Simple Physical Systems**
-       <div style={{ backgroundColor: '#f8fafc', padding: '0.75rem', borderRadius: '0.5rem', marginTop: '0.5rem', borderLeft: '3px solid #10b981' }}>
-       Model and simulate familiar systems like springs, pendulums, and moving objects.
-       </div>
-    
-    2. **Interactive Visualization**
-       <div style={{ backgroundColor: '#f8fafc', padding: '0.75rem', borderRadius: '0.5rem', marginTop: '0.5rem', borderLeft: '3px solid #10b981' }}>
-       Create visual simulations that show how systems behave over time.
-       </div>
-    
-    3. **Basic Parameter Studies**
-       <div style={{ backgroundColor: '#f8fafc', padding: '0.75rem', borderRadius: '0.5rem', marginTop: '0.5rem', borderLeft: '3px solid #10b981' }}>
-       Explore how changing inputs affects system behavior and performance.
-       </div>
-    </Steps>
-  </TabItem>
-  <TabItem label="Simulation Methods">
-    <Steps>
-    1. **Python Basics for Modeling**
-       <div style={{ backgroundColor: '#f8fafc', padding: '0.75rem', borderRadius: '0.5rem', marginTop: '0.5rem', borderLeft: '3px solid #10b981' }}>
-       Essential Python tools for creating and running simple simulations.
-       </div>
-    
-    2. **Animation and Plotting**
-       <div style={{ backgroundColor: '#f8fafc', padding: '0.75rem', borderRadius: '0.5rem', marginTop: '0.5rem', borderLeft: '3px solid #10b981' }}>
-       Visualize system behavior with moving plots and interactive graphics.
-       </div>
-    
-    3. **Problem-Solving Applications**
-       <div style={{ backgroundColor: '#f8fafc', padding: '0.75rem', borderRadius: '0.5rem', marginTop: '0.5rem', borderLeft: '3px solid #10b981' }}>
-       Apply modeling to solve specific engineering and design challenges.
-       </div>
-    </Steps>
-  </TabItem>
-</Tabs>
-
-## Hands-On Learning
-
-Build working models and simulations of everyday systems. Each tutorial provides complete code and step-by-step implementation.
-
-## Practical Examples
+## Course Overview
 
 <CardGrid>
-  <Card title="Mechanical Motion" icon="setting">
-    Springs, pendulums, and moving objects you can visualize and interact with.
+  <Card title="Mathematical Modeling" icon="rocket">
+    **System Representation**
+    
+    Learn to abstract real-world engineering systems into mathematical models that capture essential behavior while remaining computationally tractable.
   </Card>
-  <Card title="Robotics Basics" icon="puzzle">
-    Simple arm movements and path planning for robotic systems.
+  
+  <Card title="Computational Simulation" icon="setting">
+    **Numerical Methods**
+    
+    Implement and apply numerical techniques for solving differential equations, optimization problems, and dynamic system analysis.
   </Card>
-  <Card title="Control Systems" icon="lightning">
-    Temperature control, motor speed, and feedback system behavior.
+  
+  <Card title="System Analysis" icon="laptop">
+    **Behavior Prediction**
+    
+    Use simulation tools to predict system performance, analyze stability, and evaluate design alternatives before physical implementation.
   </Card>
-  <Card title="Everyday Physics" icon="star">
-    Projectile motion, fluid flow, and heat transfer in familiar contexts.
+  
+  <Card title="Design Optimization" icon="puzzle">
+    **Parameter Studies**
+    
+    Explore design spaces systematically, optimize system parameters, and perform sensitivity analysis for robust engineering solutions.
   </Card>
 </CardGrid>
 
-## Tools
+## Learning Path
 
-Python with NumPy, Matplotlib, and basic scientific libraries.
+<Tabs>
+  <TabItem label="Fundamentals">
+    ### Mathematical Foundations
+    
+    **Physical System Modeling**:
+    - Differential equation formulation
+    - State-space representations
+    - Linear and nonlinear system analysis
+    - Model validation and verification
+    
+    **Key Learning Outcomes**:
+    - Develop mathematical models from physical principles
+    - Understand model assumptions and limitations
+    - Validate models against experimental data
+    
+    [Study Simple Pendulum Modeling →](./simple-pendulum-modeling)
+  </TabItem>
+  
+  <TabItem label="Simulation Methods">
+    ### Computational Implementation
+    
+    **Numerical Solution Techniques**:
+    - Numerical integration methods
+    - Time-stepping algorithms
+    - Convergence and stability analysis
+    - Error estimation and control
+    
+    **Practical Applications**:
+    - Dynamic system simulation
+    - Parameter sensitivity studies
+    - Optimization and design exploration
+    
+    [Explore Spring-Mass Systems →](./spring-mass-system-simulation)
+  </TabItem>
+  
+  <TabItem label="Advanced Applications">
+    ### Engineering Problem Solving
+    
+    **Modern Approaches**:
+    - Machine learning in system modeling
+    - Hybrid analytical-computational methods
+    - Multi-physics simulations
+    - Real-time simulation techniques
+    
+    **Comparative Analysis**:
+    - Traditional vs. AI-based approaches
+    - Performance and accuracy trade-offs
+    - Implementation considerations
+    
+    [Compare Math vs AI Methods →](./inverse-kinematics-math-vs-ai)
+  </TabItem>
+</Tabs>
 
-## Prerequisites
+## Course Structure
 
-Basic Python and high school physics/math.
+### Core Topics
 
-Ready to build your first simulation?
+<Steps>
+
+1. **Physical System Modeling**
+   
+   Learn to derive mathematical models from physical principles, including mechanical systems, thermal systems, and dynamic processes.
+
+2. **Numerical Solution Methods**
+   
+   Master computational techniques for solving differential equations, including explicit and implicit integration methods and stability analysis.
+
+3. **Simulation Implementation**
+   
+   Develop programming skills for implementing simulation algorithms, visualization techniques, and interactive analysis tools.
+
+4. **System Analysis and Optimization**
+   
+   Apply simulation tools for design optimization, parameter studies, and performance analysis of engineering systems.
+
+</Steps>
+
+## Simulation Tools and Methods
+
+<CardGrid>
+  <Card title="Programming Languages" icon="document">
+    **Computational Platforms**
+    
+    - Python with NumPy/SciPy for numerical computation
+    - MATLAB/Simulink for system modeling
+    - C/C++ for high-performance simulation
+    - JavaScript for interactive web-based models
+  </Card>
+  
+  <Card title="Numerical Methods" icon="laptop">
+    **Solution Algorithms**
+    
+    - Euler and Runge-Kutta integration methods
+    - Finite difference and finite element techniques
+    - Monte Carlo simulation methods
+    - Optimization algorithms and parameter estimation
+  </Card>
+  
+  <Card title="Visualization Tools" icon="chart">
+    **Results Analysis**
+    
+    - Time series plotting and analysis
+    - Phase space visualization
+    - Animation and interactive displays
+    - Statistical analysis and data interpretation
+  </Card>
+  
+  <Card title="Validation Methods" icon="star">
+    **Model Verification**
+    
+    - Comparison with analytical solutions
+    - Experimental validation techniques
+    - Sensitivity analysis and uncertainty quantification
+    - Model refinement and improvement strategies
+  </Card>
+</CardGrid>
+
+## Learning Objectives
+
+By the end of this course, students will be able to:
+
+### Modeling Competency
+- **Derive mathematical models** from physical principles and engineering systems
+- **Select appropriate modeling approaches** for different system types and applications
+- **Validate and verify models** against analytical solutions and experimental data
+- **Understand model limitations** and appropriate use cases
+
+### Simulation Skills
+- **Implement numerical algorithms** for solving differential equations and optimization problems
+- **Use simulation software** effectively for engineering analysis
+- **Create visualizations** and interactive displays for simulation results
+- **Perform parameter studies** and sensitivity analysis systematically
+
+### Engineering Analysis
+- **Predict system behavior** using computational models
+- **Optimize system parameters** for desired performance characteristics
+- **Analyze system stability** and dynamic response
+- **Compare design alternatives** quantitatively using simulation
+
+## Prerequisites and Background
+
+### Mathematical Background
+- **Differential Equations**: Ordinary and basic partial differential equations
+- **Linear Algebra**: Matrix operations and eigenvalue analysis
+- **Calculus**: Differentiation, integration, and series expansions
+- **Statistics**: Basic probability and statistical analysis
+
+### Programming Skills
+- **Basic Programming**: Variables, loops, functions, and data structures
+- **Numerical Computing**: Experience with MATLAB, Python, or similar tools
+- **Problem Solving**: Algorithmic thinking and debugging skills
+- **Data Visualization**: Basic plotting and graphical representation
+
+## Assessment and Projects
+
+### Simulation Projects
+- **Individual Models**: Develop and analyze specific engineering systems
+- **Comparative Studies**: Compare different modeling approaches and methods
+- **Optimization Challenges**: Use simulation for design optimization problems
+- **Research Applications**: Apply modeling to current engineering problems
+
+### Skills Development
+- **Technical Documentation**: Clear presentation of models and results
+- **Software Development**: Creation of reusable simulation tools
+- **Critical Analysis**: Evaluation of model accuracy and limitations
+- **Engineering Communication**: Presentation of simulation results to technical audiences
+
+## Applications in Engineering
+
+### Mechanical Systems
+- Vibration analysis and control system design
+- Mechanism analysis and optimization
+- Thermal system modeling and control
+- Manufacturing process simulation
+
+### Electrical Systems
+- Circuit simulation and analysis
+- Power system modeling and stability
+- Control system design and tuning
+- Signal processing and filtering
+
+### Aerospace Engineering
+- Flight dynamics and control
+- Structural analysis and optimization
+- Propulsion system modeling
+- Mission planning and trajectory optimization
+
+### Interdisciplinary Applications
+- Biomedical system modeling
+- Environmental system analysis
+- Economic and business modeling
+- Multi-physics simulations
+
+The Modeling and Simulation course provides essential computational skills for modern engineering practice, enabling students to analyze complex systems, predict performance, and optimize designs using mathematical models and numerical simulation techniques.
+
+<Copyright />
