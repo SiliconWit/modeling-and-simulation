@@ -2,7 +2,7 @@
 title: "Spring-Mass System Simulation"
 description: "Model and simulate spring-mass systems to understand vibrations, resonance, and damping in mechanical systems"
 contributors: "sam-macharia,jack-kojiro,new-person6"
-pubDate: 2025-09-13
+pubDate: 2025-09-14
 tags: ["modeling", "simulation", "springs", "vibration", "resonance"]
 excerpt: "Build interactive simulations of spring-mass systems to explore natural frequency, damping, and forced vibrations in engineering applications."
 ---
@@ -10,7 +10,6 @@ excerpt: "Build interactive simulations of spring-mass systems to explore natura
 import ModelingSimulationComments from '../../../../components/modeling-and-simulation/ModelingSimulationComments.astro';
 import TawkWidget from '../../../../components/TawkWidget.astro';
 import UniversalContentContributors from '../../../../components/UniversalContentContributors.astro';
-import InArticleAd from '../../../../components/InArticleAd.astro';
 import Copyright from '../../../../components/Copyright.astro';
 import BionicText from '../../../../components/BionicText.astro';
 import TailwindWrapper from '../../../../components/TailwindWrapper.jsx';
@@ -53,9 +52,6 @@ A spring-mass system consists of a mass m connected to a spring with stiffness k
 - F(t): External forcing function
 
 ## Mathematical Models
-
-
-<InArticleAd />
 
 <Tabs>
   <TabItem label="Free Vibration">
@@ -216,9 +212,6 @@ $$T = \frac{2\pi}{\omega_n} = \frac{2\pi}{4.47} = 1.41 \text{ s}$$
 **Damping ratio:**
 $$\zeta = \frac{c}{2\sqrt{km}} = \frac{3000}{2\sqrt{30000 \times 1500}} = \frac{3000}{13416} = 0.224$$
 
-
-<InArticleAd />
-
 Since ζ < 1, the system is underdamped and will oscillate with decreasing amplitude.
 </details>
 
@@ -282,7 +275,6 @@ With these fundamentals, you can now model more complex systems like:
 - Active vibration control
 - Coupled oscillators
 
-<InArticleAd />
 <ModelingSimulationComments />
 <TawkWidget />
 <Copyright />
