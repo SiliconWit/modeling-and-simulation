@@ -2,7 +2,7 @@
 title: "Inverse Kinematics: Math vs AI Approaches"
 description: "Compare traditional trigonometric solutions with neural network approaches for robotic arm control and motion planning"
 contributors: "sam-macharia,jack-kojiro"
-pubDate: 2025-09-15
+pubDate: 2025-09-05
 tags: ["modeling", "simulation", "robotics", "inverse-kinematics", "ai", "neural-networks"]
 excerpt: "Explore two fundamentally different approaches to solving inverse kinematics: classical mathematical methods using trigonometry versus modern AI techniques using neural networks."
 ---
@@ -10,6 +10,7 @@ excerpt: "Explore two fundamentally different approaches to solving inverse kine
 import ModelingSimulationComments from '../../../../components/modeling-and-simulation/ModelingSimulationComments.astro';
 import TawkWidget from '../../../../components/TawkWidget.astro';
 import UniversalContentContributors from '../../../../components/UniversalContentContributors.astro';
+import InArticleAd from '../../../../components/InArticleAd.astro';
 import Copyright from '../../../../components/Copyright.astro';
 import BionicText from '../../../../components/BionicText.astro';
 import TailwindWrapper from '../../../../components/TailwindWrapper.jsx';
@@ -137,6 +138,9 @@ For a 2-link robotic arm with lengths L₁ and L₂:
 **Try this:** Manually set different target positions and observe how the mathematical solution instantly calculates the exact joint angles needed. Notice the two possible configurations (elbow up/down) for most positions.
 
 ## AI Approach: Neural Network Learning
+
+<InArticleAd />
+
 
 Instead of deriving equations, we can train a neural network to learn the relationship between positions and joint angles from data.
 
@@ -279,6 +283,9 @@ Instead of deriving equations, we can train a neural network to learn the relati
 
 ## Practical Example: Pick and Place Robot
 
+<InArticleAd />
+
+
 <Card title="Industrial Application" icon="open-book">
 
 A pick-and-place robot needs to move objects from position A(0.3, 0.2) to position B(0.5, 0.4) meters. The robot has two links: L₁ = 0.3m, L₂ = 0.25m.
@@ -347,6 +354,7 @@ With these fundamentals, you can explore:
 - **Real-time planning:** Motion planning with dynamic obstacles
 - **Learning from demonstration:** Teaching robots through human examples
 
+<InArticleAd />
 <ModelingSimulationComments />
 <TawkWidget />
 <Copyright />
