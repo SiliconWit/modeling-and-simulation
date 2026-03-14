@@ -12,6 +12,8 @@ sidebar:
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Contributors Welcome](https://img.shields.io/badge/contributors-welcome-orange)
 
+**Read this course at:** [https://siliconwit.com/education/modeling-and-simulation/](https://siliconwit.com/education/modeling-and-simulation/)
+
 A course on mathematical modeling and computational simulation for engineering system analysis. Covers building mathematical representations of physical systems, numerical methods for solving differential equations, and comparing classical and AI approaches to problems like inverse kinematics.
 
 ## Lessons
