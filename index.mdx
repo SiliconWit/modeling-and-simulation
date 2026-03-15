@@ -1,246 +1,124 @@
 ---
 title: Modeling and Simulation
-description: Mathematical modeling and computational simulation for engineering system analysis and design optimization
+description: "Build it in simulation before you build it in hardware. Nine complete Python projects covering batteries, circuits, mechanical systems, thermal analysis, control design, sensor fusion, signal processing, Monte Carlo analysis, and system identification."
+pubDate: 2026-03-01
+heroImage: "https://cdn.siliconwit.com/education/modeling-and-simulation/modeling-and-simulation-overview.png"
 ---
 
-import { Card, CardGrid, Badge, Steps } from '@astrojs/starlight/components';
-import { Tabs, TabItem } from '@astrojs/starlight/components';
+import { Card, CardGrid, Steps } from '@astrojs/starlight/components';
 import Copyright from '../../../../components/Copyright.astro';
 import TawkWidget from '../../../../components/TawkWidget.astro';
+import InArticleAd from '../../../../components/InArticleAd.astro';
 
-<div style="display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem;">
-<Badge text="Computational Course" variant="success" />
-<Badge text="System Modeling" variant="note" />
-<Badge text="Simulation Methods" variant="tip" />
-<Badge text="Engineering Analysis" variant="caution" />
-</div>
+Build it in simulation before you build it in hardware. Every lesson in this course contains a complete, runnable Python project that produces something you can actually use: a battery runtime prediction, a circuit frequency response, a heatsink temperature verdict, a set of PID gains ready to paste into firmware, or a Kalman filter for sensor fusion. The only tools you need are Python, NumPy, SciPy, and Matplotlib.
 
-Modeling and Simulation provides essential skills for creating mathematical representations of engineering systems and using computational tools to analyze, predict, and optimize system behavior. This course bridges theoretical concepts with practical simulation techniques.
+This course puts mathematics to work, turning equations into simulations of real engineering systems. If you want a deeper look at the underlying math, the [Applied Mathematics](/education/applied-mathematics/) course covers calculus, linear algebra, differential equations, and control theory.
 
-## Course Overview
+## What You Need
+
+```bash
+pip install numpy scipy matplotlib
+```
+
+Every lesson runs in a single `.py` file. No special hardware, no paid software, no cloud accounts.
+
+## Lessons
 
 <CardGrid>
-  <Card title="Mathematical Modeling" icon="rocket">
-    **System Representation**
-    
-    Learn to abstract real-world engineering systems into mathematical models that capture essential behavior while remaining computationally tractable.
+  <Card title="Lesson 1: From Equations to Simulations" icon="rocket">
+    Set up the Python simulation workflow with SciPy's solve_ivp. Model a lithium cell voltage curve and simulate discharge under a real IoT load profile. Predict battery runtime.
+
+    [Start Lesson 1](./from-equations-to-simulations)
   </Card>
-  
-  <Card title="Computational Simulation" icon="setting">
-    **Numerical Methods**
-    
-    Implement and apply numerical techniques for solving differential equations, optimization problems, and dynamic system analysis.
+
+  <Card title="Lesson 2: Simulating Electrical Circuits" icon="setting">
+    Build RC and RLC circuit models. Generate step responses, verify time constants, sweep frequency for Bode plots, and compare simulation to oscilloscope measurements.
+
+    [Start Lesson 2](./simulating-electrical-circuits)
   </Card>
-  
-  <Card title="System Analysis" icon="laptop">
-    **Behavior Prediction**
-    
-    Use simulation tools to predict system performance, analyze stability, and evaluate design alternatives before physical implementation.
+
+  <Card title="Lesson 3: Mechanical System Dynamics" icon="puzzle">
+    Model a spring-mass-damper and sweep the damping ratio. Build a suspension tuner that finds the optimal damping for minimum settling time with bounded overshoot.
+
+    [Start Lesson 3](./mechanical-system-dynamics)
   </Card>
-  
-  <Card title="Design Optimization" icon="puzzle">
-    **Parameter Studies**
-    
-    Explore design spaces systematically, optimize system parameters, and perform sensitivity analysis for robust engineering solutions.
+
+  <Card title="Lesson 4: Thermal Modeling for Electronics" icon="warning">
+    Build thermal resistance networks for electronic components. The heatsink sizer tells you if your chip stays within safe operating temperature, or if you need a bigger heatsink.
+
+    [Start Lesson 4](./thermal-modeling-electronics)
+  </Card>
+
+  <Card title="Lesson 5: Control System Design in Simulation" icon="star">
+    Model a DC motor with inertia, friction, and back-EMF. Design a PID controller, tune gains in simulation, analyze overshoot and settling time. Paste the gains into your firmware.
+
+    [Start Lesson 5](./control-system-simulation)
+  </Card>
+
+  <Card title="Lesson 6: Sensor Fusion and State Estimation" icon="laptop">
+    Fuse noisy accelerometer and drifting gyroscope data with complementary and Kalman filters. The algorithm that runs on every drone, robot, and phone.
+
+    [Start Lesson 6](./sensor-fusion-state-estimation)
+  </Card>
+
+  <Card title="Lesson 7: Simulating Signal Processing Pipelines" icon="document">
+    Design digital filters in Python, apply them to noisy sensor data, and export the coefficients for implementation in C on your MCU.
+
+    [Start Lesson 7](./signal-processing-simulation)
+  </Card>
+
+  <Card title="Lesson 8: Monte Carlo Methods for Engineering Decisions" icon="information">
+    When every component has a tolerance, will your circuit still work? Run 10,000 random trials and find out. Tolerance stackup analysis for circuits and mechanical assemblies.
+
+    [Start Lesson 8](./monte-carlo-engineering-decisions)
+  </Card>
+
+  <Card title="Lesson 9: System Identification from Measured Data" icon="approve-check">
+    Given real sensor data, fit a mathematical model. The reverse of simulation: start with measurements, end with equations you can use in a controller.
+
+    [Start Lesson 9](./system-identification-measured-data)
   </Card>
 </CardGrid>
 
-## Learning Path
+<InArticleAd />
 
-<Tabs>
-  <TabItem label="Fundamentals">
-    ### Mathematical Foundations
-    
-    **Physical System Modeling**:
-    - Differential equation formulation
-    - State-space representations
-    - Linear and nonlinear system analysis
-    - Model validation and verification
-    
-    **Key Learning Outcomes**:
-    - Develop mathematical models from physical principles
-    - Understand model assumptions and limitations
-    - Validate models against experimental data
-    
-    [Study Simple Pendulum Modeling →](./simple-pendulum-modeling)
-  </TabItem>
-  
-  <TabItem label="Simulation Methods">
-    ### Computational Implementation
-    
-    **Numerical Solution Techniques**:
-    - Numerical integration methods
-    - Time-stepping algorithms
-    - Convergence and stability analysis
-    - Error estimation and control
-    
-    **Practical Applications**:
-    - Dynamic system simulation
-    - Parameter sensitivity studies
-    - Optimization and design exploration
-    
-    [Explore Spring-Mass Systems →](./spring-mass-system-simulation)
-  </TabItem>
-  
-  <TabItem label="Advanced Applications">
-    ### Engineering Problem Solving
-    
-    **Modern Approaches**:
-    - Machine learning in system modeling
-    - Hybrid analytical-computational methods
-    - Multi-physics simulations
-    - Real-time simulation techniques
-    
-    **Comparative Analysis**:
-    - Traditional vs. AI-based approaches
-    - Performance and accuracy trade-offs
-    - Implementation considerations
-    
-    [Compare Math vs AI Methods →](./inverse-kinematics-math-vs-ai)
-  </TabItem>
-</Tabs>
-
-## Course Structure
-
-### Core Topics
+## How Each Lesson Works
 
 <Steps>
 
-1. **Physical System Modeling**
-   
-   Learn to derive mathematical models from physical principles, including mechanical systems, thermal systems, and dynamic processes.
+1. **Physics first**
 
-2. **Numerical Solution Methods**
-   
-   Master computational techniques for solving differential equations, including explicit and implicit integration methods and stability analysis.
+   Every lesson starts with the governing equations. You understand what you are simulating and why, before writing any code.
 
-3. **Simulation Implementation**
-   
-   Develop programming skills for implementing simulation algorithms, visualization techniques, and interactive analysis tools.
+2. **Build the model**
 
-4. **System Analysis and Optimization**
-   
-   Apply simulation tools for design optimization, parameter studies, and performance analysis of engineering systems.
+   Translate the equations into Python functions that SciPy can solve.
+
+3. **Run the simulation**
+
+   Execute the script. Get plots, numbers, and engineering insight. Each project produces output you can use in a real design.
+
+4. **Experiment**
+
+   Change parameters, observe the effect, build intuition. Simulation is cheap. Use it.
 
 </Steps>
 
-## Simulation Tools and Methods
+## Who This Course Is For
 
 <CardGrid>
-  <Card title="Programming Languages" icon="document">
-    **Computational Platforms**
-    
-    - Python with NumPy/SciPy for numerical computation
-    - MATLAB/Simulink for system modeling
-    - C/C++ for high-performance simulation
-    - JavaScript for interactive web-based models
+  <Card title="Embedded Engineers" icon="setting">
+    Verify thermal margins, tune PID loops, and estimate battery life before your PCB arrives.
   </Card>
-  
-  <Card title="Numerical Methods" icon="laptop">
-    **Solution Algorithms**
-    
-    - Euler and Runge-Kutta integration methods
-    - Finite difference and finite element techniques
-    - Monte Carlo simulation methods
-    - Optimization algorithms and parameter estimation
+
+  <Card title="Engineering Students" icon="open-book">
+    Connect differential equations to real engineering problems with code that produces real answers.
   </Card>
-  
-  <Card title="Visualization Tools" icon="chart">
-    **Results Analysis**
-    
-    - Time series plotting and analysis
-    - Phase space visualization
-    - Animation and interactive displays
-    - Statistical analysis and data interpretation
-  </Card>
-  
-  <Card title="Validation Methods" icon="star">
-    **Model Verification**
-    
-    - Comparison with analytical solutions
-    - Experimental validation techniques
-    - Sensitivity analysis and uncertainty quantification
-    - Model refinement and improvement strategies
+
+  <Card title="Hobbyists and Makers" icon="rocket">
+    Understand why your motor oscillates, why your circuit rings, or why your battery dies early.
   </Card>
 </CardGrid>
-
-## Learning Objectives
-
-By the end of this course, students will be able to:
-
-### Modeling Competency
-- **Derive mathematical models** from physical principles and engineering systems
-- **Select appropriate modeling approaches** for different system types and applications
-- **Validate and verify models** against analytical solutions and experimental data
-- **Understand model limitations** and appropriate use cases
-
-### Simulation Skills
-- **Implement numerical algorithms** for solving differential equations and optimization problems
-- **Use simulation software** effectively for engineering analysis
-- **Create visualizations** and interactive displays for simulation results
-- **Perform parameter studies** and sensitivity analysis systematically
-
-### Engineering Analysis
-- **Predict system behavior** using computational models
-- **Optimize system parameters** for desired performance characteristics
-- **Analyze system stability** and dynamic response
-- **Compare design alternatives** quantitatively using simulation
-
-## Prerequisites and Background
-
-### Mathematical Background
-- **Differential Equations**: Ordinary and basic partial differential equations
-- **Linear Algebra**: Matrix operations and eigenvalue analysis
-- **Calculus**: Differentiation, integration, and series expansions
-- **Statistics**: Basic probability and statistical analysis
-
-### Programming Skills
-- **Basic Programming**: Variables, loops, functions, and data structures
-- **Numerical Computing**: Experience with MATLAB, Python, or similar tools
-- **Problem Solving**: Algorithmic thinking and debugging skills
-- **Data Visualization**: Basic plotting and graphical representation
-
-## Assessment and Projects
-
-### Simulation Projects
-- **Individual Models**: Develop and analyze specific engineering systems
-- **Comparative Studies**: Compare different modeling approaches and methods
-- **Optimization Challenges**: Use simulation for design optimization problems
-- **Research Applications**: Apply modeling to current engineering problems
-
-### Skills Development
-- **Technical Documentation**: Clear presentation of models and results
-- **Software Development**: Creation of reusable simulation tools
-- **Critical Analysis**: Evaluation of model accuracy and limitations
-- **Engineering Communication**: Presentation of simulation results to technical audiences
-
-## Applications in Engineering
-
-### Mechanical Systems
-- Vibration analysis and control system design
-- Mechanism analysis and optimization
-- Thermal system modeling and control
-- Manufacturing process simulation
-
-### Electrical Systems
-- Circuit simulation and analysis
-- Power system modeling and stability
-- Control system design and tuning
-- Signal processing and filtering
-
-### Aerospace Engineering
-- Flight dynamics and control
-- Structural analysis and optimization
-- Propulsion system modeling
-- Mission planning and trajectory optimization
-
-### Interdisciplinary Applications
-- Biomedical system modeling
-- Environmental system analysis
-- Economic and business modeling
-- Multi-physics simulations
-
-The Modeling and Simulation course provides essential computational skills for modern engineering practice, enabling students to analyze complex systems, predict performance, and optimize designs using mathematical models and numerical simulation techniques.
 
 <Copyright />
 <TawkWidget />

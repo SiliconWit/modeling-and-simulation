@@ -14,24 +14,36 @@ sidebar:
 
 **Read this course at:** [https://siliconwit.com/education/modeling-and-simulation/](https://siliconwit.com/education/modeling-and-simulation/)
 
-A course on mathematical modeling and computational simulation for engineering system analysis. Covers building mathematical representations of physical systems, numerical methods for solving differential equations, and comparing classical and AI approaches to problems like inverse kinematics.
+Build it in simulation before you build it in hardware. Nine complete Python projects covering battery discharge, circuit response, mechanical dynamics, thermal analysis, PID control, sensor fusion, signal processing, Monte Carlo tolerance analysis, and system identification from measured data.
 
 ## Lessons
 
 | # | Title |
 |---|-------|
-| 1.1 | Simple Pendulum Modeling |
-| 1.2 | Spring-Mass System Simulation |
-| 1.3 | Inverse Kinematics: Math vs AI Approaches |
+| 1 | From Equations to Simulations |
+| 2 | Simulating Electrical Circuits |
+| 3 | Mechanical System Dynamics |
+| 4 | Thermal Modeling for Electronics |
+| 5 | Control System Design in Simulation |
+| 6 | Sensor Fusion and State Estimation |
+| 7 | Simulating Signal Processing Pipelines |
+| 8 | Monte Carlo Methods for Engineering Decisions |
+| 9 | System Identification from Measured Data |
 
 ## File Structure
 
 ```
 modeling-and-simulation/
 ├── index.mdx
-├── simple-pendulum-modeling.mdx
-├── spring-mass-system-simulation.mdx
-├── inverse-kinematics-math-vs-ai.mdx
+├── from-equations-to-simulations.mdx
+├── simulating-electrical-circuits.mdx
+├── mechanical-system-dynamics.mdx
+├── thermal-modeling-electronics.mdx
+├── control-system-simulation.mdx
+├── sensor-fusion-state-estimation.mdx
+├── signal-processing-simulation.mdx
+├── monte-carlo-engineering-decisions.mdx
+├── system-identification-measured-data.mdx
 └── README.md
 ```
 
@@ -46,18 +58,12 @@ modeling-and-simulation/
 ## Content Standards
 
 - All lesson files use `.mdx` format
-- `<BionicText>` may be used in later content sections but not in lesson intro paragraphs
-- Code blocks should include a title attribute:
-  ````mdx
-  ```python title="pendulum_simulation.py"
-  from scipy.integrate import solve_ivp
-  sol = solve_ivp(pendulum_ode, t_span, y0)
-  ```
-  ````
-- Use Starlight components (`<Tabs>`, `<TabItem>`, `<Steps>`, `<Card>`) where appropriate
-- Keep paragraphs concise and focused on practical application
-- Include working Python examples that readers can run directly
-- Mathematical notation uses LaTeX in MDX
+- Do not use `<BionicText>` in this course
+- Every lesson contains a complete, runnable Python project
+- Code blocks should include a title attribute
+- Use ASCII diagrams in `text` code blocks where they help visualize systems
+- Use Starlight components where appropriate
+- All Python code must be testable: `python3 script.py` should produce output
 
 ## Local Development
 
@@ -68,12 +74,6 @@ git clone --recurse-submodules <main-repo-url>
 cd siliconwit-com
 npm install
 npm run dev
-```
-
-To test a production build:
-
-```bash
-npm run build
 ```
 
 ## License
