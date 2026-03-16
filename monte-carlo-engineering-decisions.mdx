@@ -32,6 +32,22 @@ You designed a voltage divider on paper. The math says the output should be 3.3 
 Monte Carlo simulation replaces an intractable analytical calculation with repeated random sampling. Instead of solving for the exact probability distribution of the output (which may require integrating over dozens of correlated variables), you sample each input variable from its known distribution, evaluate the system equation, and collect the results. For the probability and statistics foundations behind these distributions, see [Applied Mathematics: Probability, Statistics, and Noise](/education/applied-mathematics/probability-statistics-noise/). With enough samples, the histogram of outputs converges to the true distribution. The name comes from the Monte Carlo casino: the method was invented by physicists working on nuclear weapons at Los Alamos who noticed that random sampling could solve problems that defied closed-form solutions.
 </Card>
 
+```mermaid
+%%{init: {'flowchart': {'curve': 'linear'}}}%%
+flowchart TD
+    A(["Define circuit equation\nVout = Vin * R2/(R1+R2)"]) --> B["Sample R1, R2 from\ntolerance distributions"]
+    B --> C["Evaluate Vout for\nthis sample"]
+    C --> D["Store result"]
+    D --> E{"10,000\nsamples?"}
+    E -->|No| B
+    E -->|Yes| F["Build histogram\nof all Vout values"]
+    F --> G["Calculate yield\n% within spec limits"]
+    G --> H{"Yield\nacceptable?"}
+    H -->|Yes| I(["Ship the design"])
+    H -->|No| J["Tighten tolerance\non most sensitive component"]
+    J --> B
+```
+
 ### When to Use Monte Carlo
 
 Monte Carlo is the right tool when:

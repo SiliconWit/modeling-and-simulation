@@ -32,6 +32,23 @@ Raw ADC readings from a sensor are almost never clean enough to use directly. A 
 A digital filter is a mathematical operation on a sequence of numbers. It takes an input signal $x[n]$ and produces an output signal $y[n]$ by combining current and past values. Every digital filter can be described by its difference equation, its frequency response, and its impulse response. These are three views of the same object.
 </Card>
 
+```text
+  Digital Filter Architecture
+  ──────────────────────────────────────────
+  FIR (Finite Impulse Response):
+  x[n] ──► [b0] ──┐
+  x[n-1] ► [b1] ──┤
+  x[n-2] ► [b2] ──┼──► y[n] = sum of weighted inputs
+  x[n-N] ► [bN] ──┘    (feedforward only, always stable)
+
+  IIR (Infinite Impulse Response):
+  x[n] ──► [b0] ──┐
+  x[n-1] ► [b1] ──┤
+                   ├──► y[n] = weighted inputs + weighted past outputs
+  y[n-1] ► [a1] ──┤    (feedback loop, can be unstable)
+  y[n-2] ► [a2] ──┘
+```
+
 ### FIR vs IIR Filters
 
 There are two families of digital filters:
