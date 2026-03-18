@@ -1,7 +1,7 @@
 ---
 title: "From Equations to Simulations"
 description: "Set up the Python simulation workflow with SciPy solve_ivp. Model a lithium cell discharge curve and predict battery runtime under a realistic load profile."
-contributors: "sam-macharia"
+contributors: "sam-macharia, morris-wachira"
 pubDate: 2026-03-01
 tags: ["modeling", "simulation", "python", "scipy", "battery", "ode"]
 excerpt: "Learn the complete simulation workflow: write governing equations, translate them into Python, solve with SciPy's solve_ivp, and plot the results. Build a battery discharge simulator that predicts how many hours your lithium cell will last under a given load."
@@ -51,6 +51,14 @@ A Python script that models a single lithium-ion cell (3.0 V to 4.2 V range, 300
 
 
 Before we dive into batteries, let's establish the general pattern that every simulation in this course will follow.
+
+```mermaid
+flowchart LR
+    A[1. Identify\nthe physics] --> B[2. Write\nthe ODE]
+    B --> C[3. Implement\nin Python]
+    C --> D[4. Solve with\nsolve_ivp]
+    D --> E[5. Plot and\ninterpret]
+```
 
 <Steps>
 

@@ -1,7 +1,7 @@
 ---
 title: "System Identification from Measured Data"
 description: "Fit mathematical models to measured step response data using least squares estimation. Build a black-box model fitter that extracts transfer function parameters from noisy experimental data."
-contributors: "sam-macharia"
+contributors: "sam-macharia, morris-wachira"
 heroImage: "https://cdn.siliconwit.com/education/modeling-and-simulation/system-identification-measured-data.png"
 pubDate: 2026-03-09
 tags: ["system-identification", "parameter-estimation", "least-squares", "transfer-function", "step-response", "modeling-simulation"]
@@ -32,16 +32,15 @@ In every previous lesson, you started with a known model and simulated its behav
 System identification follows a structured process: choose an input signal, excite the system, record input and output data, select a model structure (first-order, second-order, etc.), estimate the parameters using optimization, and validate the model on a separate dataset. The result is a transfer function or state-space model that approximates the real system's behavior.
 </Card>
 
-```
-+-------+     +--------+     +----------+     +----------+     +-----------+
-| Apply |     | Record |     | Choose   |     | Estimate |     | Validate  |
-| step  |---->| output |---->| model    |---->| params   |---->| on new    |
-| input |     | data   |     | structure|     | (fit)    |     | data      |
-+-------+     +--------+     +----------+     +----------+     +-----------+
-                                  |                |
-                            First-order?     Least squares
-                            Second-order?    Nonlinear opt
-                            With delay?      Gradient descent
+```mermaid
+flowchart LR
+    A[Apply step\ninput] --> B[Record\noutput data]
+    B --> C{Choose model\nstructure}
+    C --> D[Estimate\nparameters]
+    D --> E[Validate\non new data]
+    C -- First-order? --> D
+    C -- Second-order? --> D
+    C -- With delay? --> D
 ```
 
 ## First-Order System Review

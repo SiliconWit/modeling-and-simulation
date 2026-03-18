@@ -1,7 +1,7 @@
 ---
 title: "Sensor Fusion and State Estimation"
 description: "Combine noisy accelerometer and drifting gyroscope data into accurate orientation estimates using complementary and Kalman filters. Build an IMU orientation estimator in Python."
-contributors: "sam-macharia"
+contributors: "sam-macharia, morris-wachira"
 heroImage: "https://cdn.siliconwit.com/education/modeling-and-simulation/sensor-fusion-state-estimation.png"
 pubDate: 2026-03-06
 tags: ["sensor-fusion", "kalman-filter", "complementary-filter", "IMU", "state-estimation", "modeling-simulation"]
@@ -97,6 +97,14 @@ For $\alpha = 0.98$ and $\Delta t = 0.01$ s (100 Hz), $\tau = 0.49$ s. Signals f
 
 
 The Kalman filter is the optimal linear estimator for Gaussian noise. Instead of a fixed weighting like the complementary filter, it computes a time-varying gain based on how much it trusts the model versus the measurement. The core idea has two steps.
+
+```mermaid
+flowchart TD
+    A[Predict Step\nPropagate state with model\nGrow uncertainty] --> B{Measurement\navailable?}
+    B -- Yes --> C[Update Step\nCompute Kalman gain K\nCorrect state with measurement\nShrink uncertainty]
+    C --> A
+    B -- No --> A
+```
 
 ### Predict Step
 
