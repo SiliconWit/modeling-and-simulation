@@ -704,7 +704,7 @@ Expected auto-tuner output:
 </Tabs>
 
 :::tip[Instrument it]
-A controller you simulate assumes a perfect measurement; the real loop closes on a real sensor, and that sensor decides whether the loop holds steady or buzzes. Sample the feedback (an encoder for position, an IMU for angle, a current sensor for torque) fast enough and with little enough delay that the phase margin survives, because sensor latency and noise are what turn a clean simulation into an oscillating machine. The [STM32 or ESP32 running the loop](/education/sensor-actuator-interfacing-stm32/) can also [stream the setpoint and error](/education/iot-systems/) so you tune it on real data.
+A controller you simulate assumes a perfect measurement; the real loop closes on a real sensor, and that sensor decides whether the loop holds steady or buzzes. Sample the feedback (an encoder for position, an IMU for angle, a current sensor for torque) fast enough and with little enough delay that the phase margin survives, because sensor latency and noise are what turn a clean simulation into an oscillating machine. The [STM32 or ESP32 running the loop](/education/sensor-actuator-interfacing-stm32/) can also [stream the setpoint and error](/education/iot-systems/) to [siliconwit.io](https://siliconwit.io) so you tune it on real data.
 :::
 
 ## From Simulation to Firmware

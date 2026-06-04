@@ -491,7 +491,7 @@ The residuals (measured minus predicted) tell you whether your model is adequate
 If the residuals look random and their standard deviation matches the known noise level, you have extracted all the information the data contains.
 
 :::tip[Instrument it]
-System identification flips the usual direction: instead of simulating from known parameters, you measure a real system and let the data reveal the model, which makes sensor quality the whole game. Drive the system with a known input (a step, a chirp, a PRBS signal) and record the response cleanly with an [encoder, accelerometer, or load cell sampled at a steady rate](/education/sensor-actuator-interfacing-stm32/), because any noise or timing jitter ends up baked into your identified parameters. Do it well and the model you fit actually predicts the machine you [keep monitoring](/education/iot-systems/).
+System identification flips the usual direction: instead of simulating from known parameters, you measure a real system and let the data reveal the model, which makes sensor quality the whole game. Drive the system with a known input (a step, a chirp, a PRBS signal) and record the response cleanly with an [encoder, accelerometer, or load cell sampled at a steady rate](/education/sensor-actuator-interfacing-stm32/), because any noise or timing jitter ends up baked into your identified parameters. Do it well and the model you fit actually predicts the machine you [keep monitoring](/education/iot-systems/) on [siliconwit.io](https://siliconwit.io).
 :::
 
 ## Using Your Own Data

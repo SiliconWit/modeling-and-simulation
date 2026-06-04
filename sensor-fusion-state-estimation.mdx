@@ -444,7 +444,7 @@ For roll and pitch, the accelerometer provides a gravity reference. For yaw, the
 The same fusion principles apply. The Kalman filter simply grows from a 2-state system to a 6-state or 7-state system. Libraries like Madgwick and Mahony implement efficient versions of this for embedded platforms.
 
 :::tip[Instrument it]
-A Kalman or complementary filter is only as good as the sensors feeding it: the whole point of fusion is that no single sensor is trustworthy alone. An IMU's gyro drifts but is smooth, its accelerometer is noisy but absolute, and fused they give an angle you can believe. Tune the filter's noise covariances to the real sensor specs, not to guesses, and the [STM32 or ESP32 that reads the IMU](/education/sensor-actuator-interfacing-stm32/) can run this exact filter on-device and [report a clean state](/education/iot-systems/) from messy inputs.
+A Kalman or complementary filter is only as good as the sensors feeding it: the whole point of fusion is that no single sensor is trustworthy alone. An IMU's gyro drifts but is smooth, its accelerometer is noisy but absolute, and fused they give an angle you can believe. Tune the filter's noise covariances to the real sensor specs, not to guesses, and the [STM32 or ESP32 that reads the IMU](/education/sensor-actuator-interfacing-stm32/) can run this exact filter on-device and [report a clean state](/education/iot-systems/) from messy inputs straight to [siliconwit.io](https://siliconwit.io).
 :::
 
 ## Practical Considerations

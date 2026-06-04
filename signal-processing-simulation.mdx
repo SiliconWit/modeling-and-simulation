@@ -406,7 +406,7 @@ Call `iir_filter()` once per ADC sample in your timer interrupt. The output is t
 On a microcontroller, you can only use causal filtering (`lfilter` equivalent). The filter only has access to current and past samples, never future ones. This means there will be a small phase delay in the output. For most control and measurement applications, this delay is acceptable. If it matters, you can compensate for it in your control loop or reduce the filter order.
 
 :::tip[Instrument it]
-The filters and FFTs you simulate here are not academic: they run on real sensor signals, and the first one is usually vibration. Simulate the anti-alias filter and the window you will actually use, then feed it a real accelerometer stream and the same spectrum that found a bearing fault in simulation finds it on the machine. Get the sampling and filtering right on the [device that captures the signal](/education/sensor-actuator-interfacing-stm32/), and it can [report the spectrum](/education/iot-systems/) instead of a raw firehose.
+The filters and FFTs you simulate here are not academic: they run on real sensor signals, and the first one is usually vibration. Simulate the anti-alias filter and the window you will actually use, then feed it a real accelerometer stream and the same spectrum that found a bearing fault in simulation finds it on the machine. Get the sampling and filtering right on the [device that captures the signal](/education/sensor-actuator-interfacing-stm32/), and it can [report the spectrum](/education/iot-systems/) to [siliconwit.io](https://siliconwit.io) instead of a raw firehose.
 :::
 
 ## Filter Design Guidelines

@@ -562,7 +562,7 @@ The transient simulation matters when:
 3. **Thermal cycling**: Repeated heating and cooling causes mechanical stress (solder joint fatigue). The simulation shows the temperature swing, which drives reliability calculations.
 
 :::tip[Instrument it]
-A thermal model predicts a junction or board temperature; the only way to know it is right is to measure the real one. Place an NTC thermistor or a TMP117 on the hot component and another on the heat-sink base, or a thermocouple with a MAX31855 for anything above 125 C, exactly where the model puts a node. The [MCU that reads them](/education/sensor-actuator-interfacing-stm32/) confirms the model, and can then [trend the temperature](/education/iot-systems/) and throttle before the part cooks.
+A thermal model predicts a junction or board temperature; the only way to know it is right is to measure the real one. Place an NTC thermistor or a TMP117 on the hot component and another on the heat-sink base, or a thermocouple with a MAX31855 for anything above 125 C, exactly where the model puts a node. The [MCU that reads them](/education/sensor-actuator-interfacing-stm32/) confirms the model, and can then [trend the temperature](/education/iot-systems/) on [siliconwit.io](https://siliconwit.io) and throttle before the part cooks.
 :::
 
 ## Experiments to Try

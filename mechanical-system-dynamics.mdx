@@ -509,7 +509,7 @@ For the 2% settling time criterion, the optimal value is typically around $\zeta
 This is exactly the same tradeoff that appears in PID control tuning (Lesson 5). Allowing a small overshoot often gives you a faster response.
 
 :::tip[Instrument it]
-A dynamics model predicts how a structure or mechanism moves: its natural frequencies and its response to a push. You confirm it by measuring. Tap the real part and read the ringdown with an accelerometer (an ADXL345 to start, an ADXL355 for low noise), and the peaks in the spectrum should land on the frequencies you simulated; if they do not, your stiffness or mass assumptions are off. The [device reading the accelerometer](/education/sensor-actuator-interfacing-stm32/) turns the model into something you can [check against the real machine](/education/iot-systems/) and keep watching as it wears.
+A dynamics model predicts how a structure or mechanism moves: its natural frequencies and its response to a push. You confirm it by measuring. Tap the real part and read the ringdown with an accelerometer (an ADXL345 to start, an ADXL355 for low noise), and the peaks in the spectrum should land on the frequencies you simulated; if they do not, your stiffness or mass assumptions are off. The [device reading the accelerometer](/education/sensor-actuator-interfacing-stm32/) turns the model into something you can [check against the real machine](/education/iot-systems/) and [keep watching on siliconwit.io](https://siliconwit.io) as it wears.
 :::
 
 ## Experiments to Try
