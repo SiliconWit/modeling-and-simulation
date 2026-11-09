@@ -24,19 +24,19 @@ import { Card, CardGrid, Badge, Steps, LinkButton, FileTree } from '@astrojs/sta
 
 
 
-Every electronic component generates heat, and every component has a maximum temperature it can tolerate. The gap between those two facts is where thermal design lives. In this lesson you will build thermal resistance networks in Python, simulate transient heat-up, and create a heatsink sizer tool that gives you a clear answer: safe or danger. The same math that models RC circuits (Lesson 2) works perfectly for heat flow. #ThermalModeling #HeatsinkDesign #Electronics
+A voltage regulator that works on the bench can fail in a closed box in the sun. The part makes the same heat in both places, but in the box the heat has nowhere cool to go. Every component has a maximum temperature, and thermal design is the work of staying below it. In this lesson you model the path of the heat from the chip to the air as a chain of thermal resistances in Python, simulate the warm-up after power-on, and build a heatsink sizer that gives a clear answer: safe or danger. The mathematics is the same as for a resistor and a capacitor. #ThermalModeling #HeatsinkDesign #Electronics
 
 ## What We Are Building
 
 <Card title="Heatsink Sizer Tool" icon="star">
-A Python tool that models the thermal path from silicon junction to ambient air. You input: component power dissipation, thermal resistances (junction-to-case, case-to-heatsink, heatsink-to-ambient), thermal capacitances, and ambient temperature. The tool outputs: steady-state junction temperature, time to reach 90% of steady state, and a clear "SAFE" or "DANGER" verdict based on the component's maximum rated temperature.
+A Python tool that models the path of the heat from the junction (the silicon chip inside the package, where the heat is made) to the ambient air around the part. You enter the power the component turns into heat, the thermal resistances along the path, the thermal capacitances, and the ambient temperature. The tool gives the steady-state junction temperature (the temperature it settles at), the time to reach 90% of the rise, and a verdict, "SAFE" or "DANGER", against the component's maximum rated temperature.
 </Card>
 
 **Project specifications:**
 
 | Parameter | Value |
 |-----------|-------|
-| Thermal Model | Lumped-parameter resistance-capacitance network |
+| Thermal Model | Resistance-capacitance network (each part is treated as one temperature) |
 | Nodes | Junction, Case, Heatsink, Ambient |
 | Solver | SciPy `solve_ivp` for transient response |
 | Steady-State | Analytical (sum of thermal resistances times power) |
@@ -47,58 +47,44 @@ A Python tool that models the thermal path from silicon junction to ambient air.
 <InArticleAd />
 
 
-Heat flow follows the same math as electrical current flow. This analogy lets you reuse everything you learned about RC circuits.
+Heat flows from hot to cold, as current flows from a high voltage to a low one. A thermal resistance says how many degrees hotter one side must be to push one watt through: across a resistance of 30 °C/W, the hot side is 30 °C hotter for each watt. A thermal capacitance says how many joules it takes to warm a part by 1 °C. With these two ideas, what you know about a resistor and a capacitor applies to heat.
 
 | Thermal Domain | Electrical Domain | Symbol |
 |----------------|-------------------|--------|
-| Temperature (C) | Voltage (V) | $T$ / $V$ |
+| Temperature (°C) | Voltage (V) | $T$ / $V$ |
 | Heat flow (W) | Current (A) | $\dot{Q}$ / $I$ |
-| Thermal resistance (C/W) | Electrical resistance (ohm) | $R_\theta$ / $R$ |
-| Thermal capacitance (J/C) | Electrical capacitance (F) | $C_\theta$ / $C$ |
+| Thermal resistance (°C/W) | Electrical resistance (ohm) | $R_\theta$ / $R$ |
+| Thermal capacitance (J/°C) | Electrical capacitance (F) | $C_\theta$ / $C$ |
 
-Just as voltage drops across resistors in series, temperature drops across thermal resistances in series:
+Just as voltage drops across resistors in series, temperature drops across thermal resistances in series. The junction is hotter than the air by the power times the sum of the resistances:
 
 $$
 T_{\text{junction}} = T_{\text{ambient}} + P \cdot (R_{\theta,jc} + R_{\theta,cs} + R_{\theta,sa})
 $$
 
-where $P$ is power dissipation, $R_{\theta,jc}$ is junction-to-case, $R_{\theta,cs}$ is case-to-sink, and $R_{\theta,sa}$ is sink-to-ambient.
+Here $P$ is the power turned into heat, in watts. The three resistances, in °C/W, are junction-to-case ($R_{\theta,jc}$), case-to-heatsink ($R_{\theta,cs}$) and heatsink-to-ambient ($R_{\theta,sa}$). For the microcontroller in the code, with no heatsink: $T_{\text{junction}} = 25 + 0.2 \times (30 + 0 + 200) = 71$ °C.
 
 ## The Thermal Network
 
 <InArticleAd />
 
 
+The heat enters at the junction and passes through each part in turn on its way to the air. Each part has its own temperature and its own thermal capacitance. The air is so large that its temperature does not change.
+
 ```text
-  Power In (P)
-      |
-      v
-  +--------+
-  |Junction|  T_j     Thermal capacitance: C_j
-  +---+----+
-      |
-     R_jc         Junction-to-Case resistance
-      |
-  +---+----+
-  | Case   |  T_c     Thermal capacitance: C_c
-  +---+----+
-      |
-     R_cs         Case-to-Sink resistance (thermal paste/pad)
-      |
-  +---+----+
-  |Heatsink|  T_s     Thermal capacitance: C_s
-  +---+----+
-      |
-     R_sa         Sink-to-Ambient resistance (convection)
-      |
-  +---+----+
-  |Ambient |  T_a     Fixed (room temperature)
-  +--------+
+ heat P
+   |
+   v
++----------+ R_jc +------+ R_cs +------+ R_sa +-----+
+| Junction |------| Case |------| Sink |------| Air |
++----------+      +------+      +------+      +-----+
+    T_j             T_c           T_s           T_a
+    C_j             C_c           C_s          fixed
 ```
 
 ### Governing Equations
 
-For each node, the energy balance gives a first-order ODE:
+The formula above gives only the final temperature. To see the warm-up, write an energy balance for each part: the heat it stores each second equals the heat that flows in minus the heat that flows out. The flow between two parts is their temperature difference divided by the thermal resistance between them. Each balance is one rule for the solver:
 
 **Junction node:**
 
@@ -499,7 +485,11 @@ The first thing it prints is the STM32 example:
 =======================================================
 ```
 
-Your STM32 at 200 mW reaches 71 C without a heatsink, which is within the 85 C limit but with only 14 C of margin. In a hot enclosure (40 C ambient), it would reach 86 C and exceed the limit. Adding a small clip-on heatsink drops it to 35 C with a comfortable 50 C margin.
+Your run also prints the case and heatsink temperatures and a "Time to 90%" line (1118.2 seconds for this case). They are left out above.
+
+The microcontroller at 200 mW reaches 71 °C with no heatsink. That is inside the 85 °C limit, with 14 °C of margin. The rise of 46 °C sits on top of the ambient temperature. So in an enclosure in the sun, with the air inside at 40 °C, the junction reaches 86 °C and passes the limit. A small clip-on heatsink lowers it to 35 °C in 25 °C air.
+
+Check the simulation against the hand formula before you trust the curves. The simulated junction curve ends at 70.9 °C, and the formula gives 71.0 °C. The small gap is there because the run stops after five time constants. A run twice as long ends at 71.0 °C.
 
 ## Practical Thermal Design Rules
 
@@ -513,24 +503,24 @@ Every component datasheet lists thermal resistances:
 - $R_{\theta,JC}$: junction-to-case (fixed by the package, you cannot change it)
 - $R_{\theta,JA}$: junction-to-ambient (measured on a standard PCB with no heatsink, useful as a worst-case reference)
 
-To use the model in this lesson, you need $R_{\theta,JC}$ from the datasheet and $R_{\theta,SA}$ from the heatsink datasheet. The case-to-sink resistance $R_{\theta,CS}$ depends on the thermal interface material (typically 0.2 to 2.0 C/W for thermal paste, 1 to 5 C/W for a thermal pad).
+To use the model in this lesson, you need $R_{\theta,JC}$ from the datasheet and $R_{\theta,SA}$ from the heatsink datasheet. The case-to-sink resistance $R_{\theta,CS}$ depends on the thermal interface material (typically 0.2 to 2.0 °C/W for thermal paste, 1 to 5 °C/W for a thermal pad).
   </TabItem>
 
   <TabItem label="Choosing a Heatsink">
 
-The required heatsink thermal resistance is:
+Turn the steady-state formula around. The total resistance allowed is the allowed temperature rise divided by the power. What is left after the two fixed resistances is the most the heatsink may have:
 
 $$
 R_{\theta,SA} \leq \frac{T_{\max} - T_{\text{ambient}}}{P} - R_{\theta,JC} - R_{\theta,CS}
 $$
 
-For the power MOSFET example (5 W, $T_{\max}$ = 150 C, $R_{\theta,JC}$ = 1.5 C/W, $R_{\theta,CS}$ = 0.5 C/W, $T_a$ = 25 C):
+For the power MOSFET example ($P = 5\,\text{W}$, $T_{\max} = 150\,^\circ\text{C}$, $R_{\theta,JC} = 1.5\,^\circ\text{C/W}$, $R_{\theta,CS} = 0.5\,^\circ\text{C/W}$, $T_a = 25\,^\circ\text{C}$):
 
 $$
-R_{\theta,SA} \leq \frac{150 - 25}{5} - 1.5 - 0.5 = 23.0 \text{ C/W}
+R_{\theta,SA} \leq \frac{150 - 25}{5} - 1.5 - 0.5 = 23.0\,^\circ\text{C/W}
 $$
 
-Any heatsink with $R_{\theta,SA} \leq 23$ C/W will keep the MOSFET within its rated temperature.
+Any heatsink with $R_{\theta,SA} \leq 23\,^\circ\text{C/W}$ will keep the MOSFET within its rated temperature.
   </TabItem>
 
   <TabItem label="Derating">
@@ -539,12 +529,12 @@ Good practice is to design for a junction temperature well below the absolute ma
 
 | Application | Target Junction Temp |
 |-------------|---------------------|
-| Consumer electronics | $T_{\max}$ minus 20 C |
-| Industrial | $T_{\max}$ minus 25 C |
-| Automotive | $T_{\max}$ minus 30 C |
-| Military/aerospace | $T_{\max}$ minus 40 C |
+| Consumer electronics | $T_{\max} - 20\,^\circ\text{C}$ |
+| Industrial | $T_{\max} - 25\,^\circ\text{C}$ |
+| Automotive | $T_{\max} - 30\,^\circ\text{C}$ |
+| Military/aerospace | $T_{\max} - 40\,^\circ\text{C}$ |
 
-In the simulation, simply lower `t_max_c` by the derating margin and see if the verdict changes.
+In the simulation, lower `t_max_c` by the derating margin and see if the verdict changes.
   </TabItem>
 </Tabs>
 
@@ -553,7 +543,7 @@ In the simulation, simply lower `t_max_c` by the derating margin and see if the 
 <InArticleAd />
 
 
-The transient simulation matters when:
+The steady-state formula says where the temperature ends, not how it gets there. The simulation of the warm-up (the transient) matters in three cases:
 
 1. **Pulsed loads**: A power amplifier that transmits for 10 ms every second may never reach the steady-state temperature. The peak junction temperature depends on the thermal capacitance, not just the resistance.
 
@@ -576,7 +566,7 @@ A thermal model predicts a junction or board temperature; the only way to know i
   </Card>
 
   <Card title="Hot Ambient" icon="warning">
-  Rerun the STM32 example at 40 C, 50 C, and 60 C ambient. At what ambient temperature does it exceed the 85 C limit without a heatsink?
+  Rerun the STM32 example at 40 °C, 50 °C, and 60 °C ambient. At what ambient temperature does it exceed the 85 °C limit without a heatsink?
   </Card>
 
   <Card title="Custom Component" icon="rocket">
@@ -597,7 +587,7 @@ A thermal model predicts a junction or board temperature; the only way to know i
 
 1. **Thermal networks are RC circuits**
 
-   The same math applies. Temperature is voltage, heat flow is current, thermal resistance is electrical resistance, and thermal mass is capacitance. If you can simulate an RC circuit, you can simulate a heatsink.
+   Temperature is voltage, heat flow is current, and thermal mass is capacitance. If you can simulate an RC circuit, you can simulate a heatsink.
 
 2. **Steady-state temperature is just Ohm's law**
 
@@ -609,11 +599,11 @@ A thermal model predicts a junction or board temperature; the only way to know i
 
 4. **Always check at worst-case ambient**
 
-   A design that works at 25 C ambient may fail at 50 C. The simulation makes it trivial to sweep ambient temperature and find the threshold.
+   A design that works at 25 °C ambient may fail at 50 °C. With the simulation it is quick to sweep the ambient temperature and find the limit.
 
 5. **Datasheets give you the numbers you need**
 
-   $R_{\theta,JC}$ comes from the component datasheet. $R_{\theta,SA}$ comes from the heatsink datasheet. $R_{\theta,CS}$ comes from the thermal interface material datasheet. Plug them in and simulate.
+   $R_{\theta,JC}$ comes from the component datasheet, $R_{\theta,SA}$ from the heatsink datasheet, and $R_{\theta,CS}$ from the datasheet of the paste or pad.
 
 </Steps>
 
@@ -622,9 +612,9 @@ A thermal model predicts a junction or board temperature; the only way to know i
 <InArticleAd />
 
 
-In the final lesson, we bring everything together with control system design. You will model a DC motor, design a PID controller, tune the gains in simulation, and analyze the closed-loop response. When the simulation looks right, you paste the gains into firmware.
+Next, a controller is added to the model: you tune the speed control of a DC motor in simulation before it runs in firmware.
 
-[Control System Design in Simulation →](./control-system-simulation)
+[Control System Design in Simulation →](/education/modeling-and-simulation/control-system-simulation/)
 
 
 

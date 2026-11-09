@@ -24,78 +24,79 @@ import { Card, CardGrid, Badge, Steps, LinkButton, FileTree } from '@astrojs/sta
 
 
 
-Raw ADC readings from a sensor are almost never clean enough to use directly. A temperature sensor on a vibrating motor, an accelerometer on a quadcopter, a current sense resistor next to a switching regulator: they all need filtering. The standard workflow is to design and validate the filter in Python where you can see every frequency component, then export the coefficients and implement the difference equation in C on your microcontroller. This lesson walks through that entire pipeline, from noisy signal to clean output to deployable code. #SignalProcessing #DigitalFilters #EmbeddedSystems
+A pressure sensor on a pump line gives a reading that jumps by half a bar from one sample to the next. An alarm trips when nothing is wrong, and a controller that follows the reading moves its valve all day. A filter gives a smooth line, but every filter pays for it with delay. Filter too hard and a burst pipe is shown late, or a short pressure spike is not shown at all. In this lesson you design a filter in Python, where you can see what it removes and what it delays, and then move its numbers to C for a microcontroller. #SignalProcessing #DigitalFilters #EmbeddedSystems
 
 ## Digital Filter Fundamentals
 
 <Card title="The Core Idea" icon="star">
-A digital filter is a mathematical operation on a sequence of numbers. It takes an input signal $x[n]$ and produces an output signal $y[n]$ by combining current and past values. Every digital filter can be described by its difference equation, its frequency response, and its impulse response. These are three views of the same object.
+A digital filter is a small calculation done on every new reading. It takes the newest reading, written $x[n]$, and some earlier readings, $x[n-1]$, $x[n-2]$, and combines them into one output value, $y[n]$. Here $n$ counts the readings. You can describe the same filter by its difference equation (the calculation itself), by its frequency response (which frequencies pass and which are weakened), or by its response to one sudden change (how late the output is).
 </Card>
 
-```text
-  Digital Filter Architecture
-  ──────────────────────────────────────────
-  FIR (Finite Impulse Response):
-  x[n] ──► [b0] ──┐
-  x[n-1] ► [b1] ──┤
-  x[n-2] ► [b2] ──┼──► y[n] = sum of weighted inputs
-  x[n-N] ► [bN] ──┘    (feedforward only, always stable)
+There are two families. A FIR filter (finite impulse response) uses only readings. An IIR filter (infinite impulse response) also uses its own earlier outputs, as a running total does.
 
-  IIR (Infinite Impulse Response):
+```text
+  FIR: readings only
   x[n] ──► [b0] ──┐
   x[n-1] ► [b1] ──┤
-                   ├──► y[n] = weighted inputs + weighted past outputs
-  y[n-1] ► [a1] ──┤    (feedback loop, can be unstable)
-  y[n-2] ► [a2] ──┘
+  x[n-2] ► [b2] ──┼──► y[n] = weighted readings
+  x[n-M] ► [bM] ──┘    (always stable)
+
+  IIR: readings and earlier outputs
+  x[n] ──► [b0] ──┐
+  x[n-1] ► [b1] ──┤
+                  ├──► y[n] = weighted readings
+  y[n-1] ► [a1] ──┤           - weighted earlier outputs
+  y[n-2] ► [a2] ──┘    (feedback, can be unstable)
 ```
 
 ### FIR vs IIR Filters
 
-There are two families of digital filters:
-
-| Property | FIR (Finite Impulse Response) | IIR (Infinite Impulse Response) |
+| Property | FIR | IIR |
 |----------|------|------|
-| Uses past outputs? | No | Yes |
+| Uses earlier outputs? | No | Yes |
 | Stability | Always stable | Can be unstable |
-| Phase response | Can be exactly linear | Nonlinear phase |
-| Filter order for same sharpness | High (many taps) | Low (few coefficients) |
-| Memory/computation | More | Less |
+| Delay | Can be the same at all frequencies | Changes with frequency |
+| Size for the same sharpness | Large (many stored readings, called taps) | Small (few coefficients) |
 | Example | Moving average | Butterworth, Chebyshev |
 
-For embedded systems where memory and CPU cycles are tight, IIR filters are often preferred because they achieve sharp cutoffs with fewer coefficients.
+IIR filters are often chosen for microcontrollers, where memory and time are short.
 
 ### The Difference Equation
 
-Every IIR filter can be written as:
+In words: multiply the newest reading and the earlier readings by fixed numbers $b_k$ and add them. Then subtract the earlier outputs, each multiplied by a fixed number $a_k$:
 
 $$y[n] = \frac{1}{a_0}\left(\sum_{k=0}^{M} b_k \cdot x[n-k] - \sum_{k=1}^{N} a_k \cdot y[n-k]\right)$$
 
-The $b$ coefficients multiply the input (feedforward path), and the $a$ coefficients multiply past outputs (feedback path). SciPy's `signal.butter` gives you exactly these coefficients.
+$M$ and $N$ are the numbers of earlier readings and earlier outputs used. A FIR filter has no $a_k$ terms. SciPy's `signal.butter` gives you exactly these $b$ and $a$ coefficients.
 
 ## Moving Average Filter
 
 <InArticleAd />
 
 
-The simplest FIR filter. It replaces each sample with the average of the surrounding $M$ samples:
+The simplest FIR filter replaces each reading by the mean of the most recent $M$ readings:
 
 $$y[n] = \frac{1}{M}\sum_{k=0}^{M-1} x[n-k]$$
 
-The moving average is a low-pass filter. It smooths out high-frequency noise but has a very gentle rolloff, meaning it does not sharply separate signal from noise. Its frequency response has zeros at multiples of $f_s / M$, where $f_s$ is the sample rate. For the mathematics behind frequency-domain analysis and the FFT, see [Applied Mathematics: Fourier Analysis and the Frequency Domain](/education/applied-mathematics/fourier-analysis-frequency-domain/).
+It is a low-pass filter: slow changes pass and fast changes are weakened. Random noise falls by a factor of $\sqrt{M}$, so 50 readings give about 7 times less noise.
 
-**When to use it:** Quick noise reduction where sharp cutoff is not critical. Very easy to implement on any MCU: just a circular buffer and a running sum.
+The price is delay. After a sudden real change the mean still holds old readings, so it shows 90% of the change only after $0.9M$ readings. At 1,000 readings per second and $M = 50$ that is about 45 ms. An event shorter than the window is treated worse: a pressure spike that lasts 20 ms is shown at 40% of its height. So choose $M$ from the fastest real change you must see, not from how smooth the line looks.
+
+The moving average separates signal from noise only gently. It removes completely the frequencies that are multiples of $f_s / M$, where $f_s$ is the sample rate in Hz. For the mathematics of frequencies and the FFT, see [Applied Mathematics: Fourier Analysis and the Frequency Domain](/education/applied-mathematics/fourier-analysis-frequency-domain/).
+
+**When to use it:** quick noise reduction where a sharp cutoff is not needed. It is easy to write on any microcontroller (MCU): a buffer of the last $M$ readings and a running sum.
 
 ## Butterworth Filter
 
 <InArticleAd />
 
 
-The Butterworth filter is the workhorse of signal processing. It has the flattest possible passband (no ripple), a smooth monotonic rolloff, and predictable phase behavior. It is an IIR filter defined by two parameters:
+The Butterworth filter is the usual first choice for sensor signals. Below its cutoff frequency it passes the signal almost unchanged, with no ripple. Above the cutoff its gain (output size divided by input size) falls steadily. It is an IIR filter set by two numbers:
 
-- **Cutoff frequency** $f_c$: the frequency at which the gain drops to $-3$ dB (about 70.7% of the passband amplitude)
-- **Order** $N$: higher order means sharper rolloff (steeper transition from pass to stop) but more computation and more phase distortion
+- **Cutoff frequency** $f_c$ in Hz: the frequency at which the gain is 70.7%, written $-3$ dB. The decibel (dB) is a way to write a ratio: $-20$ dB means 10 times smaller.
+- **Order** $N$: how steeply the gain falls above the cutoff. Each order adds 20 dB per decade, which is 10 times weaker for every 10 times in frequency. A higher order needs more calculation and gives more delay.
 
-A 4th-order Butterworth rolling off at 20 dB/decade per order gives 80 dB/decade of attenuation. For most sensor filtering applications, 2nd to 4th order is sufficient.
+A 4th-order Butterworth falls at 80 dB per decade: a signal at 10 times the cutoff frequency comes out 10,000 times weaker. For most sensor signals, order 2 to 4 is enough.
 
 ### Designing with SciPy
 
@@ -115,17 +116,18 @@ This returns `(b, a)` coefficient arrays that you can use directly in `scipy.sig
 <InArticleAd />
 
 
-Sometimes your ADC runs at a much higher rate than you need. A 12-bit ADC sampling at 10 kHz feeding a temperature control loop that updates at 100 Hz has 100x more data than necessary. Decimation reduces the sample rate by keeping every $M$-th sample, but you must low-pass filter first to prevent aliasing.
+Sometimes the ADC (analog-to-digital converter, the part that turns a voltage into a number) runs much faster than you need. An ADC that samples at 10 kHz for a temperature loop that updates at 100 Hz gives 100 times more data than necessary. Decimation lowers the sample rate by keeping every $M$-th sample.
 
-```
-Original signal:  [x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, ...]
-                         |              |              |
-Anti-alias filter:  Low-pass at fs/(2*M) Hz
-                         |              |              |
-Decimate by M=3:  [x0,             x3,             x6,         ...]
-```
+There is a trap. A signal sampled $f_s$ times a second can carry frequencies only up to $f_s / 2$, the Nyquist frequency. Anything faster that is still in the signal when you drop samples does not vanish. It comes back as a false slow signal, called an alias, and no later filter can remove it. So filter first, then drop samples. The program below does this:
 
-The anti-aliasing filter prevents high-frequency content above the new Nyquist frequency from folding back into the signal as artifacts.
+```text
+  ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+  │ 1,000 Hz     │────►│ low-pass     │────►│ keep every   │
+  │ readings     │     │ below 40 Hz  │     │ 10th reading │
+  └──────────────┘     └──────────────┘     └──────────────┘
+    carries up to        anti-alias           100 Hz readings,
+    500 Hz               filter               carry up to 50 Hz
+```
 
 ## Project: Noise Filter Designer
 
@@ -133,7 +135,7 @@ The anti-aliasing filter prevents high-frequency content above the new Nyquist f
 
 
 <Card title="What You Will Build" icon="rocket">
-A complete filter design tool that generates noisy sensor data (or loads a CSV), designs a Butterworth low-pass filter, applies it, and visualizes the before and after in both time domain and frequency domain. The tool also outputs the filter coefficients in a format you can copy directly into a C implementation for your microcontroller.
+A filter design tool. It makes a noisy sensor signal whose true value is known, applies a moving average and a Butterworth low-pass filter, and plots the result against time and against frequency. Because the true value is known, it can print how far each filtered signal is from it. It also prints the coefficients in a form you can copy into C.
 </Card>
 
 ### Complete Runnable Code
@@ -180,8 +182,14 @@ noisy_signal = true_signal + white_noise + power_line_50 + power_line_60 + switc
 def moving_average(x, window_size):
     """Simple moving average filter."""
     kernel = np.ones(window_size) / window_size
-    # Use 'valid' mode and pad to maintain length
-    filtered = np.convolve(x, kernel, mode='same')
+    # This window is centred on each reading: it also uses later readings,
+    # so it shows no delay. That is possible only on a finished recording.
+    # Pad both ends with the edge values, then use 'valid' mode,
+    # so the length is kept and the ends are not pulled toward zero
+    left = window_size // 2
+    right = window_size - 1 - left
+    padded = np.pad(x, (left, right), mode='edge')
+    filtered = np.convolve(padded, kernel, mode='valid')
     return filtered
 
 ma_window = 50  # 50 samples at 1 kHz = 50 ms window
@@ -270,7 +278,7 @@ print("// (a[0] is always 1.0 for normalized coefficients)")
 # ============================================================
 decim_factor = 10  # Reduce from 1000 Hz to 100 Hz
 
-# Anti-aliasing filter: cutoff at new Nyquist (50 Hz)
+# Anti-aliasing filter: cutoff at 80% of the new Nyquist (0.8 * 50 = 40 Hz)
 b_aa, a_aa = signal.butter(4, (fs / decim_factor) / 2.0 * 0.8, btype='low', fs=fs)
 anti_aliased = signal.filtfilt(b_aa, a_aa, noisy_signal)
 decimated = anti_aliased[::decim_factor]
@@ -353,13 +361,13 @@ print("\nPlot saved: noise_filter_designer.png")
 
 <Steps>
 
-1. **Time domain plot** shows the noisy ADC signal (gray), the true underlying signal (black), and two filtered versions. The Butterworth filter tracks the true signal closely while removing almost all noise. The moving average also helps but has more residual ripple.
+1. **Time domain plot** (signal against time) shows the noisy ADC signal (gray), the true signal (black), and two filtered versions. The program prints the RMSE of each, the root mean square error: the typical distance from the true signal. It is 0.96 for the raw signal, 0.13 after the moving average and 0.12 after the Butterworth filter.
 
-2. **Frequency domain plot** reveals the noise components: peaks at 50 Hz and 60 Hz from power line interference, a bump around 200 Hz from switching noise, and broadband white noise everywhere. After Butterworth filtering, everything above 10 Hz is gone.
+2. **Frequency domain plot** (signal strength against frequency) shows where the noise is: peaks at 50 Hz and 60 Hz from power lines, a peak at 200 Hz from switching noise, and white noise at all frequencies. After the Butterworth filter, almost nothing above 10 Hz is left.
 
-3. **Filter response plot** compares the 4th-order and 8th-order Butterworth frequency responses. The 4th-order rolls off at 80 dB/decade; the 8th-order at 160 dB/decade. Higher order means sharper cutoff but more computation and more phase distortion.
+3. **Filter response plot** compares the 4th-order and 8th-order Butterworth filters. The 4th-order gain falls at 80 dB per decade and the 8th-order at 160 dB per decade. The sharper filter did not give a smaller error here (0.126 against 0.123): what is left is noise below 10 Hz, which no order can remove.
 
-4. **Causal vs zero-phase plot** demonstrates a critical distinction. The `lfilter` (causal) output has a time delay because the filter can only use past and present samples, exactly as it would run on a microcontroller. The `filtfilt` (zero-phase) output has no delay because it processes the signal forward and backward, but this is only possible offline.
+4. **Causal vs zero-phase plot** shows the difference that matters most in practice. The `lfilter` output is causal: it uses only present and past samples, as a microcontroller must, so it is late. The `filtfilt` output has no delay because it passes over the recording forward and then backward, which is possible only on a finished recording.
 
 </Steps>
 
@@ -368,7 +376,7 @@ print("\nPlot saved: noise_filter_designer.png")
 <InArticleAd />
 
 
-The filter coefficients printed by the code are directly usable in C. Here is the general structure for a direct-form IIR filter on an MCU:
+The filter coefficients printed by the code can be used in C as they are. This function is the difference equation, written for an MCU:
 
 ```c
 // IIR filter implementation for embedded systems
@@ -399,14 +407,19 @@ double iir_filter(double x_new) {
 }
 ```
 
-Call `iir_filter()` once per ADC sample in your timer interrupt. The output is the filtered value. This is the difference equation running in real time.
+Call `iir_filter()` once per ADC sample in your timer interrupt. The value that it returns is the filtered reading.
 
 ### Important: Causal Filtering on MCUs
 
-On a microcontroller, you can only use causal filtering (`lfilter` equivalent). The filter only has access to current and past samples, never future ones. This means there will be a small phase delay in the output. For most control and measurement applications, this delay is acceptable. If it matters, you can compensate for it in your control loop or reduce the filter order.
+A microcontroller has the present and past samples and never the future ones, so it can run only the causal filter (the `lfilter` result). Its output is late. For the 10 Hz, 4th-order filter of this lesson, slow signals come out about 42 ms late, and a sudden step is shown to 90% after 63 ms.
+
+Before you trust a filter in a device, check two things with `lfilter`:
+
+- Pass a step through it and read the delay. If a control loop or an alarm cannot accept this delay, raise the cutoff or lower the order.
+- Pass the shortest real event you must detect through it. If the event comes out much smaller, the filter is hiding it.
 
 :::tip[Instrument it]
-The filters and FFTs you simulate here are not academic: they run on real sensor signals, and the first one is usually vibration. Simulate the anti-alias filter and the window you will actually use, then feed it a real accelerometer stream and the same spectrum that found a bearing fault in simulation finds it on the machine. Get the sampling and filtering right on the [device that captures the signal](/education/sensor-actuator-interfacing-stm32/), and it can [report the spectrum](/education/iot-systems/) to [siliconwit.io](https://siliconwit.io) instead of a raw firehose.
+The first real signal these filters meet is often vibration. Simulate the anti-alias filter you will use, then give it a real accelerometer signal. With the sampling and the filter correct on the [device that captures the signal](/education/sensor-actuator-interfacing-stm32/), the device can [report the spectrum](/education/iot-systems/) to [siliconwit.io](https://siliconwit.io) in place of every raw sample.
 :::
 
 ## Filter Design Guidelines
@@ -428,25 +441,25 @@ The filters and FFTs you simulate here are not academic: they run on real sensor
 <InArticleAd />
 
 
-1. **Notch filter.** Design a bandstop (notch) filter to remove only the 50 Hz power line interference without affecting the rest of the signal. Use `signal.iirnotch`. Compare the result with the low-pass approach.
+1. **Notch filter.** Design a notch filter with `signal.iirnotch` that removes only the 50 Hz power line interference. Compare the result with the low-pass filter.
 
-2. **FIR comparison.** Design a 50-tap FIR filter using `signal.firwin` with the same 10 Hz cutoff. Compare the frequency response, group delay, and RMSE against the 4th-order Butterworth. How many FIR taps do you need to match the Butterworth's sharpness?
+2. **FIR comparison.** Design a 50-tap FIR filter using `signal.firwin` with the same 10 Hz cutoff. Compare the frequency response, delay, and RMSE against the 4th-order Butterworth. How many taps match the Butterworth's sharpness?
 
-3. **Real data.** Record ADC data from an actual sensor (or download a noisy sensor dataset from the web). Load it as a CSV, apply the Butterworth filter, and visualize. How do you choose the cutoff frequency when you do not know the true signal?
+3. **Real data.** Record ADC data from a real sensor, load it as a CSV, apply the Butterworth filter, and plot. How do you choose the cutoff frequency when you do not know the true signal?
 
-4. **Fixed-point coefficients.** Convert the floating-point b and a coefficients to Q15 fixed-point format (multiply by 32768 and round to integers). Implement the filter using integer arithmetic only. Compare the fixed-point output to the floating-point output. How much error does quantization introduce?
+4. **Fixed-point coefficients.** Convert the $b$ and $a$ coefficients to Q15 fixed-point format (multiply by 32768 and round to integers) and run the filter with integer arithmetic only. How much error does the rounding add?
 
-5. **Cascaded second-order sections.** For filter orders above 4, direct form implementation can be numerically unstable. Use `signal.butter(..., output='sos')` to get second-order sections. Implement the cascade and compare stability.
+5. **Cascaded second-order sections.** For orders above 4, the direct form can become unstable from rounding. Use `signal.butter(..., output='sos')` to get second-order sections, run them one after another, and compare.
 
 ## References
 
 <InArticleAd />
 
 
-- Oppenheim, A. V. and Schafer, R. W. (2009). *Discrete-Time Signal Processing*. Prentice Hall. The standard DSP textbook.
-- Smith, S. W. (1997). *The Scientist and Engineer's Guide to Digital Signal Processing*. Free online: [dspguide.com](http://www.dspguide.com). Excellent intuitive explanations.
+- Oppenheim, A. V. and Schafer, R. W. (2009). *Discrete-Time Signal Processing*. Prentice Hall.
+- Smith, S. W. (1997). *The Scientist and Engineer's Guide to Digital Signal Processing*. Free online: [dspguide.com](http://www.dspguide.com).
 - SciPy Signal Processing documentation: [docs.scipy.org/doc/scipy/reference/signal.html](https://docs.scipy.org/doc/scipy/reference/signal.html)
-- Texas Instruments Application Note SLAA447. *IIR Filter Design on the MSP430*. Practical embedded implementation guide.
+- Texas Instruments Application Note SLAA447. *IIR Filter Design on the MSP430*.
 
 
 

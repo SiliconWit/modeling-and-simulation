@@ -5,7 +5,7 @@ contributors: "sam-macharia, morris-wachira"
 heroImage: "https://cdn.siliconwit.com/education/modeling-and-simulation/monte-carlo-engineering-decisions.png"
 pubDate: 2026-03-08
 tags: ["monte-carlo", "tolerance-analysis", "yield", "statistical-simulation", "engineering-decisions", "modeling-simulation"]
-excerpt: "When you cannot solve it analytically, simulate it 10,000 times with random variation. This lesson uses Monte Carlo methods to analyze component tolerance stackups, predict manufacturing yield, and compare design choices quantitatively. With 5% resistors, 92% of boards hit target. With 1%: 99.8%."
+excerpt: "When you cannot solve it analytically, simulate it 10,000 times with random variation. This lesson uses Monte Carlo methods to analyze component tolerance stackups, predict manufacturing yield, and compare design choices quantitatively. With 5% resistors, 92% of boards hit target. With 1%: 100%."
 ---
 
 import ModelingSimulationComments from '../../../../components/modeling-and-simulation/ModelingSimulationComments.astro';
@@ -24,12 +24,12 @@ import { Card, CardGrid, Badge, Steps, LinkButton, FileTree } from '@astrojs/sta
 
 
 
-You designed a voltage divider on paper. The math says the output should be 3.3 V. You build ten boards, and the outputs range from 3.1 V to 3.5 V. None of them hit 3.3 V exactly. Every resistor has a tolerance, every capacitor drifts with temperature, every PCB trace has manufacturing variation. Worst-case analysis tells you the extreme bounds, but it is overly pessimistic because it assumes every component is simultaneously at its worst. Monte Carlo simulation gives you the real answer: run the circuit equation 10,000 times, each time drawing component values from their tolerance distributions, and build a histogram of outcomes. Now you can make quantitative decisions: which components need tighter tolerances, and which are already good enough. #MonteCarlo #ToleranceAnalysis #EngineeringDesign
+You design a voltage divider for 3.3 V. The calculation is correct, and the average of the boards you build is 3.3 V. Yet some boards are outside the limits and are scrapped, because every resistor is a little different from its nominal value. The same happens with the life of a pump or the cost of a project: the average looks fine, and the cases far from the average do the damage. The questions that matter are how often the result is outside the limit, and how bad it then is. Monte Carlo simulation answers them. It calculates the result thousands of times, each time with input values drawn at random from the range that each input can really have, and it counts the outcomes. #MonteCarlo #ToleranceAnalysis #EngineeringDesign
 
 ## The Monte Carlo Idea
 
 <Card title="Why Monte Carlo Works" icon="star">
-Monte Carlo simulation replaces an intractable analytical calculation with repeated random sampling. Instead of solving for the exact probability distribution of the output (which may require integrating over dozens of correlated variables), you sample each input variable from its known distribution, evaluate the system equation, and collect the results. For the probability and statistics foundations behind these distributions, see [Applied Mathematics: Probability, Statistics, and Noise](/education/applied-mathematics/probability-statistics-noise/). With enough samples, the histogram of outputs converges to the true distribution. The name comes from the Monte Carlo casino: the method was invented by physicists working on nuclear weapons at Los Alamos who noticed that random sampling could solve problems that defied closed-form solutions.
+When several uncertain inputs are multiplied and divided, an exact formula for the spread of the output is hard to find. Monte Carlo replaces the formula by counting. In each trial, every input gets a random value from its distribution, which is the description of the values it can take and how likely each one is. The output is calculated and stored. After thousands of trials, the histogram of the outputs shows how often each result happens. For distributions, see [Applied Mathematics: Probability, Statistics, and Noise](/education/applied-mathematics/probability-statistics-noise/). The result is only as good as the distributions you give it: the method cannot know that a spread was guessed.
 </Card>
 
 ```mermaid
@@ -52,15 +52,15 @@ flowchart TD
 
 Monte Carlo is the right tool when:
 
-- The system equation involves nonlinear combinations of random variables
-- There are too many random variables for analytical integration
-- You need the full output distribution, not just mean and variance
-- You want to answer questions like "what percentage of units will pass?"
+- The uncertain inputs are multiplied, divided or passed through a curve, not only added
+- There are too many uncertain inputs for a calculation by hand
+- You need the whole spread of the output, not only its mean
+- The question is "what percentage of units will pass?" or "how often is the limit passed?"
 
 It is not needed when:
 
-- The system is a linear combination of Gaussian variables (the output is also Gaussian; just propagate mean and variance analytically)
-- You only need worst-case bounds (use min/max analysis instead)
+- The output is a plain sum of inputs with bell-shaped (Gaussian) spreads. The output is then bell-shaped too, and its mean and variance can be calculated directly.
+- You need only the worst-case limits. Use a minimum and maximum analysis.
 
 ## Project: Tolerance Stackup Analyzer
 
@@ -68,7 +68,7 @@ It is not needed when:
 
 
 <Card title="What You Will Build" icon="rocket">
-A Monte Carlo tolerance analyzer that models a voltage divider circuit with real component tolerances. It runs 10,000 trials for each tolerance grade (1%, 2%, 5%, 10%), plots histograms of the output voltage, computes yield (percentage within specification), and determines the minimum tolerance grade needed to achieve a target yield. A second example analyzes a mechanical shaft-bearing-housing assembly.
+A Monte Carlo tolerance analyzer for a voltage divider. A stackup is the way the tolerances of several parts add up in one result. The program runs 10,000 trials for each resistor tolerance (1%, 2%, 5%, 10%), plots the histograms of the output voltage, and calculates the yield: the percentage of boards inside the specification. A second example analyzes a shaft, a bearing and a housing.
 </Card>
 
 ### Complete Runnable Code
@@ -85,7 +85,7 @@ import matplotlib.pyplot as plt
 
 np.random.seed(42)
 
-N_TRIALS = 50000  # Number of Monte Carlo trials
+N_TRIALS = 10000  # Number of Monte Carlo trials
 
 # ============================================================
 # Example 1: Voltage Divider Tolerance Analysis
@@ -228,24 +228,25 @@ print("\n--- Sensitivity Analysis (Voltage Divider, 5% tolerance) ---")
 # Baseline
 baseline_std = results[5]['std']
 
-# Tighten R1 only to 1%
-vout_tight_r1 = voltage_divider_mc(R1_nominal, R2_nominal, Vin_nominal, 1, N_TRIALS)
-# Keep R1 at 5%, measured as if R2 is tight
+# Tighten both R1 and R2 to 1%
+vout_tight_both = voltage_divider_mc(R1_nominal, R2_nominal, Vin_nominal, 1, N_TRIALS)
+
+# Tighten R2 only to 1% (R1 stays at 5%)
 R1_5pct = R1_nominal * (1 + 0.05 * (2 * np.random.rand(N_TRIALS) - 1))
 R2_1pct = R2_nominal * (1 + 0.01 * (2 * np.random.rand(N_TRIALS) - 1))
-vout_tight_r2 = Vin_nominal * R2_1pct / (R1_5pct + R2_1pct)
+vout_tight_r2_only = Vin_nominal * R2_1pct / (R1_5pct + R2_1pct)
 
-# Tighten R2 only to 1%
-R1_5pct2 = R1_nominal * (1 + 0.05 * (2 * np.random.rand(N_TRIALS) - 1))
-R2_1pct2 = R2_nominal * (1 + 0.01 * (2 * np.random.rand(N_TRIALS) - 1))
-vout_tight_r2_only = Vin_nominal * R2_1pct2 / (R1_5pct2 + R2_1pct2)
+# Tighten R1 only to 1% (R2 stays at 5%)
+R1_1pct = R1_nominal * (1 + 0.01 * (2 * np.random.rand(N_TRIALS) - 1))
+R2_5pct = R2_nominal * (1 + 0.05 * (2 * np.random.rand(N_TRIALS) - 1))
+vout_tight_r1_only = Vin_nominal * R2_5pct / (R1_1pct + R2_5pct)
 
 print(f"  Both at 5%:     std = {baseline_std:.5f} V")
-print(f"  Both at 1%:     std = {np.std(vout_tight_r1):.5f} V")
-print(f"  R1=5%, R2=1%:   std = {np.std(vout_tight_r2):.5f} V")
+print(f"  Both at 1%:     std = {np.std(vout_tight_both):.5f} V")
 print(f"  R1=5%, R2=1%:   std = {np.std(vout_tight_r2_only):.5f} V")
-print(f"  -> Tightening R2 alone reduces variation because R2 is larger")
-print(f"     and contributes more to the output voltage sensitivity.")
+print(f"  R1=1%, R2=5%:   std = {np.std(vout_tight_r1_only):.5f} V")
+print(f"  -> Tightening either resistor alone gives the same improvement:")
+print(f"     both have the same sensitivity magnitude, R1/(R1+R2).")
 
 # ============================================================
 # Plot results
@@ -317,13 +318,13 @@ print("\nPlot saved: monte_carlo_tolerance.png")
 
 <Steps>
 
-1. **Histogram spread.** The histograms show how component tolerance propagates to the output. With 1% resistors, the output voltage distribution is a narrow spike centered on the target. With 10% resistors, the distribution is wide and a significant fraction of boards fall outside specification.
+1. **Histogram spread.** The mean output is 3.33 V for all four tolerances. Only the spread changes. With 1% resistors the histogram is a narrow peak at the target. With 10% resistors it is wide, and a large part of it lies outside the limits.
 
-2. **Yield numbers.** The yield percentage tells you what fraction of manufactured boards (or assemblies) will meet the specification. This is the number that matters for production planning. If your yield is 92%, you need to build 109 units to ship 100.
+2. **Yield numbers.** The yield is 100% with 1% and 2% resistors, 92.0% with 5% resistors and 66.7% with 10% resistors. This is the number for production planning: at a yield of 92% you must build 109 boards to ship 100.
 
-3. **Sensitivity analysis.** By tightening one component at a time, you discover which component contributes most to output variation. In a voltage divider, the larger resistor (R2) has more influence because it appears in both numerator and denominator. Spending money on tighter R2 tolerance gives more improvement than tightening R1.
+3. **Sensitivity analysis.** Tightening one component at a time shows which one matters most. In a voltage divider both resistors have the same influence: a 1% change in $R_1$ and a 1% change in $R_2$ each move $V_{out}$ by the same fraction, $R_1/(R_1+R_2)$, in opposite directions. Tightening one of them reduces the spread from about 0.045 V to about 0.033 V, and tightening both gives about 0.009 V. For the yield, one is already enough here: with $R_1$ at 1% and $R_2$ at 5%, no combination leaves the limits. The decision depends on where the limits are, not on the spread alone.
 
-4. **Mechanical stackup.** The shaft-bearing-housing example shows that clearance and interference are both random variables. Even when nominal dimensions look fine, manufacturing variation can produce assemblies where the shaft binds (clearance too small) or the bearing falls out (interference too small).
+4. **Mechanical stackup.** The nominal dimensions look safe, but the simulation finds that in 1.8% of assemblies the press fit is too loose and the bearing can come out of the housing. The clearance of the shaft is never too small.
 
 </Steps>
 
@@ -334,10 +335,10 @@ print("\nPlot saved: monte_carlo_tolerance.png")
 
 Worst-case analysis assumes every component is simultaneously at its worst tolerance limit. For the voltage divider with 5% resistors:
 
-- Worst-case high: R1 at -5%, R2 at +5%, giving maximum Vout
-- Worst-case low: R1 at +5%, R2 at -5%, giving minimum Vout
+- Worst-case high: $R_1$ at $-5\%$, $R_2$ at $+5\%$, giving maximum $V_{out} = 3.443\,\text{V}$
+- Worst-case low: $R_1$ at $+5\%$, $R_2$ at $-5\%$, giving minimum $V_{out} = 3.220\,\text{V}$
 
-This gives a wide range, but the probability of every component being at its extreme simultaneously is negligible. Monte Carlo shows the realistic distribution.
+The worst case tells you that a failure is possible. It does not tell you how often it happens, because all components are almost never at their limits together. Monte Carlo gives the "how often".
 
 | Method | Output range (5% resistors) | Useful for |
 |--------|----------------------------|------------|
@@ -345,31 +346,33 @@ This gives a wide range, but the probability of every component being at its ext
 | RSS (root sum square) | Moderate range | Quick estimate if linear and Gaussian |
 | Monte Carlo | Realistic distribution | Full picture, nonlinear systems, yield |
 
-For safety-critical applications (medical devices, aerospace), you often need worst-case analysis for certification plus Monte Carlo for design optimization.
+Where a failure can harm people (medical devices, aircraft), the approval usually asks for a worst-case analysis, and Monte Carlo is used to improve the design.
 
 ## Choosing Distributions
 
 <InArticleAd />
 
 
-Real component values do not follow a single universal distribution. The choice of distribution matters:
+The distribution you assume for each input decides the result. For the divider with 5% resistors, a uniform distribution (every value in the band equally likely) gives a yield of 92%. A Gaussian distribution (bell-shaped, with three standard deviations at 5%) gives 99.5%. The parts and the program are the same.
+
+So state the distribution of every input next to the result, and say where it comes from: a datasheet, a measured sample of parts, or a cautious guess. A Monte Carlo result without its assumptions cannot be checked. Typical choices:
 
 | Component | Typical Distribution | Notes |
 |-----------|---------------------|-------|
-| Resistors (tight tolerance) | Truncated Gaussian | Factory-tested, rejects removed |
-| Resistors (wide tolerance) | Uniform | Leftover after tight-tolerance parts are sold |
-| Capacitors | Truncated Gaussian | Temperature and aging add systematic shift |
-| Machined dimensions | Gaussian | Central limit theorem applies to machining errors |
-| PCB trace width | Gaussian | Etching process variation is symmetric |
+| Resistors (tight tolerance) | Gaussian, cut off at the tolerance | Tested at the factory, rejects removed |
+| Resistors (wide tolerance) | Uniform | What is left after the tight parts are sold |
+| Capacitors | Gaussian, cut off at the tolerance | Temperature and age also shift the value |
+| Machined dimensions | Gaussian | Many small independent errors add up |
+| PCB trace width | Gaussian | Etching errors are the same in both directions |
 
-The uniform distribution is conservative (worst-case compatible with Monte Carlo). If you have actual manufacturing data, fit the observed distribution and use that.
+The uniform distribution is the cautious choice when you have no data. If you have measurements from production, use the distribution they show.
 
 ## Number of Trials
 
 <InArticleAd />
 
 
-How many trials do you need? The standard error of a Monte Carlo estimate decreases as $1/\sqrt{N}$:
+A Monte Carlo result is itself uncertain: another set of random numbers gives a slightly different answer. For a yield $p$ (as a fraction) from $N$ trials, the standard error is $\sqrt{p(1-p)/N}$. A yield of 92% from 10,000 trials is uncertain by about 0.3%, so report 92% and not 92.03%. A quick check is to run again with another seed and see how far the answer moves. The error falls as $1/\sqrt{N}$:
 
 | Trials | Standard error of mean | Standard error of 99th percentile |
 |--------|----------------------|-----------------------------------|
@@ -385,15 +388,15 @@ For yield estimation, you need more trials when the yield is close to 100%. To e
 <InArticleAd />
 
 
-1. **Temperature drift.** Add a temperature coefficient to the resistors: each resistor drifts by $\pm$100 ppm per degree C. Run the Monte Carlo with temperature uniformly distributed from 0 to 70 degrees C. How does yield change?
+1. **Temperature drift.** Add a temperature coefficient to the resistors: each resistor drifts by $\pm 100\,\text{ppm}/^\circ\text{C}$. Run the Monte Carlo with temperature uniformly distributed from $0\,^\circ\text{C}$ to $70\,^\circ\text{C}$. How does yield change?
 
-2. **Voltage regulator.** Model a linear voltage regulator with input voltage (5.0V, 5% tolerance), reference voltage (1.25V, 1% tolerance), and two feedback resistors (both 1% tolerance). The output is $V_{out} = V_{ref} \cdot (1 + R_1/R_2)$. What yield do you get for 3.3V +/- 2%?
+2. **Voltage regulator.** Model a linear voltage regulator with input voltage (5.0V, 5% tolerance), reference voltage (1.25V, 1% tolerance), and two feedback resistors (both 1% tolerance). The output is $V_{out} = V_{ref} \cdot (1 + R_1/R_2)$. What yield do you get for $3.3\,\text{V} \pm 2\%$?
 
-3. **Mechanical press fit.** In the shaft-bearing example, tighten the housing bore tolerance from 12 um to 6 um. How much does yield improve? What if you tighten the shaft instead?
+3. **Mechanical press fit.** In the shaft-bearing example, tighten the housing bore tolerance from $12\,\mu\text{m}$ to $6\,\mu\text{m}$. How much does yield improve? What if you tighten the shaft instead?
 
-4. **Correlated variations.** What if R1 and R2 come from the same reel and their errors are correlated (both tend to be high or both tend to be low)? Modify the simulation to use correlated random samples and observe how the output distribution changes.
+4. **Correlated variations.** What if $R_1$ and $R_2$ come from the same reel and their errors are correlated (both tend to be high or both tend to be low)? Modify the simulation to use correlated random samples and observe how the output distribution changes.
 
-5. **Cost optimization.** Assign costs to each tolerance grade (1% costs 3x more than 5%). Find the combination of R1 and R2 tolerances that achieves 99% yield at minimum total cost.
+5. **Cost optimization.** Assign costs to each tolerance grade (1% costs 3x more than 5%). Find the combination of $R_1$ and $R_2$ tolerances that achieves 99% yield at minimum total cost.
 
 ## References
 

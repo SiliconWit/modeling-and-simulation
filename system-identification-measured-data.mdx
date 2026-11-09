@@ -24,23 +24,24 @@ import { Card, CardGrid, Badge, Steps, LinkButton, FileTree } from '@astrojs/sta
 
 
 
-In every previous lesson, you started with a known model and simulated its behavior. Real engineering works the other way around. You have a motor, a thermal system, or a chemical process. You do not know the differential equation. What you can do is poke the system with a known input (a step, a pulse, a chirp), record what comes out, and fit a mathematical model to the data. This is system identification, and it is how control engineers build models of systems they cannot derive from first principles. Once you have the model, you can simulate it, design a controller for it, or predict how it will behave under new conditions. #SystemIdentification #ParameterEstimation #ControlSystems
+A cold room cools too slowly, or a motor passes its target position, and a controller must be set. Every tuning rule asks for numbers you do not have: how strongly the system answers an input, and how fast. You cannot calculate them, because nobody knows the exact insulation, friction or load. But you can measure them. Give the system a known input, such as a step, record what it does, and fit a mathematical model to the record. This is system identification. Its danger is a model that copies the one recording it was built from and fails on the next, so this lesson also shows how to test a model before you trust it. #SystemIdentification #ParameterEstimation #ControlSystems
 
 ## The System Identification Workflow
 
 <Card title="From Data to Model" icon="star">
-System identification follows a structured process: choose an input signal, excite the system, record input and output data, select a model structure (first-order, second-order, etc.), estimate the parameters using optimization, and validate the model on a separate dataset. The result is a transfer function or state-space model that approximates the real system's behavior.
+System identification has six steps. Choose an input signal. Apply it to the system. Record the input and the output. Choose a model structure, which is the form of the equation (first-order, second-order, with or without delay). Find the parameters that make this model fit the record. Then test the model on a recording it has not seen. The result is a transfer function, a short way to write how the output follows the input.
 </Card>
 
 ```mermaid
 flowchart TD
-    A[Apply step\ninput] --> B[Record\noutput data]
-    B --> C{Choose model\nstructure}
-    C --> D[Estimate\nparameters]
-    D --> E[Validate\non new data]
-    C -- First-order? --> D
-    C -- Second-order? --> D
-    C -- With delay? --> D
+    A[Apply a step\ninput] --> B[Record input\nand output]
+    B --> C[Choose a model\nstructure]
+    C --> D[Fit the\nparameters]
+    D --> E{Error near\nthe noise?}
+    E -- No --> C
+    E -- Yes --> F{Predicts a new\nrecording?}
+    F -- No --> C
+    F -- Yes --> G[Use the model]
 ```
 
 ## First-Order System Review
@@ -48,27 +49,27 @@ flowchart TD
 <InArticleAd />
 
 
-A first-order system has one energy storage element (one capacitor, one thermal mass, one tank). Its step response is an exponential rise or decay characterized by two parameters:
+A first-order system has one store of energy or material: one thermal mass, one tank, one capacitor. The air in a cold room after the compressor starts, and the speed of a motor after a voltage step, are close to first-order. After a step input the output moves quickly at first and then more and more slowly toward its final value. Two parameters describe it:
 
-- **Gain** $K$: the ratio of final output change to input change
-- **Time constant** $\tau$: the time it takes to reach 63.2% of the final value
+- **Gain** $K$: the change of the output divided by the change of the input, in output units per input unit
+- **Time constant** $\tau$, in seconds: the time to cover 63.2% of the change
 
-The transfer function is:
+The transfer function writes the model in one line. The symbol $s$ stands for "rate of change", and the term $\tau s$ is what makes the output late:
 
 $$G(s) = \frac{K}{\tau s + 1}$$
 
-The step response (for a unit step at $t = 0$) is:
+For an input that steps from 0 to 1 at time $t = 0$, the output $y$ at time $t$ is:
 
 $$y(t) = K \cdot (1 - e^{-t/\tau})$$
 
 ### Recognizing a First-Order Response
 
-When you look at step response data, first-order behavior shows:
+A first-order step response shows:
 
-- No overshoot (the output approaches the final value monotonically)
-- The response is 63.2% complete at $t = \tau$
-- The response is 95% complete at $t = 3\tau$
-- The response is 99.3% complete at $t = 5\tau$
+- No overshoot: the output never passes its final value
+- 63.2% of the change at $t = \tau$
+- 95% of the change at $t = 3\tau$
+- 99.3% of the change at $t = 5\tau$
 
 If you see overshoot or oscillation, the system is at least second-order.
 
@@ -77,10 +78,10 @@ If you see overshoot or oscillation, the system is at least second-order.
 <InArticleAd />
 
 
-A second-order system has two energy storage elements. Its behavior depends on two additional parameters:
+A second-order system has two stores that pass energy between them, such as a mass and a spring. It can overshoot and oscillate. Two more parameters describe it:
 
-- **Natural frequency** $\omega_n$: how fast the system oscillates (undamped)
-- **Damping ratio** $\zeta$: how quickly oscillations die out
+- **Natural frequency** $\omega_n$, in rad/s: how fast the system would oscillate with no damping
+- **Damping ratio** $\zeta$, a number with no unit: how quickly the oscillations fade
 
 $$G(s) = \frac{K \omega_n^2}{s^2 + 2\zeta\omega_n s + \omega_n^2}$$
 
@@ -98,22 +99,29 @@ The step response depends on $\zeta$:
 <InArticleAd />
 
 
-Given $N$ measurements $(t_i, y_i)$ and a model $\hat{y}(t; \theta)$ with parameter vector $\theta$, the least squares estimate minimizes:
+Fitting needs a measure of how far a model is from the record. For each reading, take the difference between the measurement and the model, and square it. Add all the squares. Least squares finds the parameters that make this sum as small as possible:
 
 $$J(\theta) = \sum_{i=1}^{N} (y_i - \hat{y}(t_i; \theta))^2$$
 
-For a first-order step response, $\theta = [K, \tau]$ and $\hat{y}(t; \theta) = K(1 - e^{-t/\tau})$. This is a nonlinear function of $\tau$, so we use nonlinear least squares (e.g., `scipy.optimize.curve_fit`, which uses the Levenberg-Marquardt algorithm internally).
+Here $y_i$ is the measurement at time $t_i$, $N$ is the number of measurements, $\hat{y}$ is the value the model gives, and $\theta$ is the list of parameters. For a first-order step response, $\theta = [K, \tau]$ and $\hat{y}(t; \theta) = K(1 - e^{-t/\tau})$. The function `scipy.optimize.curve_fit` searches for the best $\theta$.
 
 ### Why Not Just Read K and Tau from the Plot?
 
-You can estimate $K$ by reading the final value and $\tau$ by finding the 63.2% point. But this manual approach:
+You can estimate $K$ from the final value and $\tau$ from the 63.2% point. But this:
 
 - Is inaccurate when the data is noisy
-- Does not use all the data points (only two specific values)
-- Does not give you confidence intervals
+- Uses only two of the data points
+- Gives no measure of how uncertain the result is
 - Does not work well for second-order or higher systems
 
-Least squares fitting uses every data point and produces the parameters that best explain the entire dataset. For the numerical methods behind curve fitting and least squares optimization, see [Applied Mathematics: Numerical Methods and Computation](/education/applied-mathematics/numerical-methods-computation/).
+Least squares uses every data point. For the numerical methods behind it, see [Applied Mathematics: Numerical Methods and Computation](/education/applied-mathematics/numerical-methods-computation/).
+
+### When Can You Trust the Fitted Model?
+
+A small error on the record used for the fit is needed, but it proves little. With enough parameters a model can copy any single record, noise included. Two checks give real evidence:
+
+- The error comes down to the size of the sensor noise, and not below it.
+- The model predicts a second recording that was not used for the fit.
 
 ## Project: Black-Box Model Fitter
 
@@ -121,7 +129,7 @@ Least squares fitting uses every data point and produces the parameters that bes
 
 
 <Card title="What You Will Build" icon="rocket">
-A system identification tool that generates realistic "measured" step response data (with noise and an unknown system), fits both first-order and second-order models, compares the fits, validates on a different input (ramp), and outputs the identified transfer function parameters. The tool is structured so you can replace the simulated data with a real CSV from your sensor.
+A tool that makes a "measured" step response from a hidden system with noise, fits first-order and second-order models, compares them, tests the best one on a different input (a ramp), and prints the parameters it found. Black-box means that nothing is assumed about what is inside the system. You can replace the simulated data with a CSV file from your own sensor.
 </Card>
 
 ### Complete Runnable Code
@@ -161,7 +169,7 @@ def true_system_step(t, step_amplitude=1.0):
         else:
             wd = TRUE_WN * np.sqrt(1 - TRUE_ZETA**2)
             env = np.exp(-TRUE_ZETA * TRUE_WN * td)
-            phase = np.arctan2(TRUE_ZETA, np.sqrt(1 - TRUE_ZETA**2))
+            phase = np.arctan2(np.sqrt(1 - TRUE_ZETA**2), TRUE_ZETA)
             y[i] = TRUE_K * step_amplitude * (
                 1 - env / np.sqrt(1 - TRUE_ZETA**2) * np.sin(wd * td + phase)
             )
@@ -245,7 +253,7 @@ def second_order_step(t, K, wn, zeta):
             # Underdamped
             wd = wn * np.sqrt(1 - zeta**2)
             env = np.exp(-zeta * wn * ti)
-            phase = np.arctan2(zeta, np.sqrt(1 - zeta**2))
+            phase = np.arctan2(np.sqrt(1 - zeta**2), zeta)
             y[i] = K * (1 - env / np.sqrt(1 - zeta**2) * np.sin(wd * ti + phase))
     return y
 
@@ -292,7 +300,7 @@ def second_order_delay_step(t, K, wn, zeta, delay):
         else:
             wd = wn * np.sqrt(1 - zeta**2)
             env = np.exp(-zeta * wn * td)
-            phase = np.arctan2(zeta, np.sqrt(1 - zeta**2))
+            phase = np.arctan2(np.sqrt(1 - zeta**2), zeta)
             y[i] = K * (1 - env / np.sqrt(1 - zeta**2) * np.sin(wd * td + phase))
     return y
 
@@ -459,17 +467,17 @@ print("\nPlot saved: system_identification.png")
 
 <Steps>
 
-1. **Hidden true system.** A second-order underdamped system with transport delay acts as the "real" physical system. The identifier does not have access to the true parameters. It only sees the noisy output data, just like a real experiment.
+1. **Hidden true system.** A second-order system that oscillates, with a delay of 0.15 s before it answers, stands for the real machine. The fitting code never sees its parameters, only the noisy output, as in a real experiment.
 
-2. **Step response measurement.** A step input is applied and the output is recorded with additive Gaussian noise. This simulates what you would get from an oscilloscope or data logger connected to a real system.
+2. **Step response measurement.** A step is applied and the output is recorded for 8 seconds with random noise of 0.08 units, as a data logger would record it.
 
-3. **Three models are fitted.** A first-order model (2 parameters), a second-order model (3 parameters), and a second-order model with delay (4 parameters). Each uses `scipy.optimize.curve_fit` to minimize the sum of squared residuals.
+3. **Three models are fitted.** A first-order model (2 parameters), a second-order model (3 parameters), and a second-order model with delay (4 parameters).
 
-4. **Model comparison.** The RMSE of each model is compared to the noise floor. The best model should have RMSE close to the noise standard deviation. If a model's RMSE is much higher than the noise, it means the model structure cannot capture the system's behavior.
+4. **Model comparison.** The RMSE (root mean square error, the typical distance between model and record) is 0.343 for the first-order model, 0.155 for the second-order model and 0.079 for the second-order model with delay. The noise is 0.080. Only the third model reaches the noise, so only its structure is right. The second-order model without delay looks acceptable on the plot, but it reports a natural frequency of 3.34 rad/s where the truth is 4.0: a wrong structure gives wrong parameters.
 
-5. **Cross-validation.** The best model is tested on a ramp input that was not used during fitting. If the model generalizes well to new inputs, the identification is successful. If it fails on the ramp, the model may be overfitting to the step response shape.
+5. **Test on a new input.** The best model is asked to predict the response to a ramp, which was not used for the fit. Its error there is 0.080, again the size of the noise. This is the evidence that the model describes the system and not only one record.
 
-6. **Parameter accuracy.** The error bar chart shows how close each estimated parameter is to the true value. With sufficient data and appropriate model structure, the estimates should be within a few percent of truth.
+6. **Parameter accuracy.** The bar chart compares each estimate with the true value, which only a simulation knows. Here all four are within 2% of the truth.
 
 </Steps>
 
@@ -478,20 +486,20 @@ print("\nPlot saved: system_identification.png")
 <InArticleAd />
 
 
-The residuals (measured minus predicted) tell you whether your model is adequate:
+The residuals are the differences, measured minus model, at every reading. Their pattern tells you what the model is missing:
 
 | Residual Pattern | Interpretation |
 |-----------------|----------------|
-| Random scatter around zero | Good fit. Remaining error is just noise. |
-| Systematic trend | Model structure is wrong (missing dynamics) |
-| Large at early times | Delay or initial conditions are wrong |
-| Growing over time | Unstable model or missing slow dynamics |
-| Oscillating | Missing a resonant mode |
+| Random scatter around zero | Good fit. What is left is noise. |
+| One sign for a long time, then the other | Model structure is wrong |
+| Large at early times | Delay or start value is wrong |
+| Growing over time | A slow effect is missing |
+| Oscillating | An oscillation is missing from the model |
 
-If the residuals look random and their standard deviation matches the known noise level, you have extracted all the information the data contains.
+If the residuals look random and their standard deviation matches the known noise, the model has taken all the information that the record holds.
 
 :::tip[Instrument it]
-System identification flips the usual direction: instead of simulating from known parameters, you measure a real system and let the data reveal the model, which makes sensor quality the whole game. Drive the system with a known input (a step, a chirp, a PRBS signal) and record the response cleanly with an [encoder, accelerometer, or load cell sampled at a steady rate](/education/sensor-actuator-interfacing-stm32/), because any noise or timing jitter ends up baked into your identified parameters. Do it well and the model you fit actually predicts the machine you [keep monitoring](/education/iot-systems/) on [siliconwit.io](https://siliconwit.io).
+An identified model is only as good as the record it comes from. Apply a known input and record the response with an [encoder, accelerometer, or load cell sampled at a steady rate](/education/sensor-actuator-interfacing-stm32/): noise and uneven sample timing go straight into the parameters. A model that passed the test on a second recording then predicts the machine you [keep monitoring](/education/iot-systems/) on [siliconwit.io](https://siliconwit.io), and a growing difference between model and machine is an early sign of a fault.
 :::
 
 ## Using Your Own Data
@@ -527,7 +535,7 @@ The rest of the fitting code works without modification. You will need to adjust
 <InArticleAd />
 
 
-Once you have identified the transfer function, you can use it directly in a PID simulator. For example, with the identified parameters $K$, $\omega_n$, and $\zeta$:
+The identified transfer function goes straight into the PID simulator of [control system simulation](/education/modeling-and-simulation/control-system-simulation/). With the parameters $K$, $\omega_n$, and $\zeta$:
 
 <Steps>
 
@@ -537,13 +545,11 @@ Once you have identified the transfer function, you can use it directly in a PID
 
 3. Simulate the closed-loop response to verify stability and performance
 
-4. Deploy the PID gains to your microcontroller
+4. Load the PID gains into your microcontroller
 
-5. If the real system does not match the simulation, re-identify with new data
+5. If the real system does not match the simulation, identify it again with new data
 
 </Steps>
-
-This is the standard model-based control design workflow. System identification is the first step.
 
 ## Practical Tips
 
@@ -563,11 +569,11 @@ A step input is the simplest and most common choice, but other inputs can be mor
 
 ### Signal-to-Noise Ratio
 
-Make the step large enough that the system response is clearly visible above the noise. A rule of thumb: the step response amplitude should be at least 10 times the noise standard deviation. If you cannot make the step larger (physical constraints), average multiple step responses to reduce noise.
+Make the step large enough for the response to stand clearly above the noise. A useful rule: the change of the output should be at least 10 times the standard deviation of the noise. If the step cannot be larger, average several step responses.
 
 ### How Much Data Is Enough
 
-Record data for at least 5 time constants ($5\tau$) so that the response reaches steady state. For a second-order underdamped system, record long enough for the oscillations to die out (at least $5 / (\zeta \omega_n)$ seconds). More data generally improves the fit, but only up to the point where the model structure is the limiting factor rather than noise.
+Record for at least 5 time constants ($5\tau$), so that the response reaches its final value. A record that stops early cannot fix the final value, and then the gain and the time constant are both uncertain. For a second-order system that oscillates, record until the oscillations have faded (at least $5 / (\zeta \omega_n)$ seconds). More data improves the fit only until the model structure, and not the noise, is what limits it.
 
 ## Exercises
 

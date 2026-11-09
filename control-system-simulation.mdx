@@ -24,24 +24,24 @@ import { Card, CardGrid, Badge, Steps, LinkButton, FileTree } from '@astrojs/sta
 
 
 
-This is the most practical lesson in the course. Every embedded system that controls something physical (a motor, a heater, a pressure valve) needs a controller, and PID is the most common choice. The problem is that tuning PID gains on real hardware is slow, risky, and frustrating. In this lesson you will build a DC motor model, design a PID controller around it, tune the gains in simulation until the response looks right, and then paste those gains directly into your firmware. #PIDControl #MotorControl #SimulationFirst
+A speed controller tuned by trial on the real machine costs time, and a wrong setting can break a belt or burn a motor. A simulation lets you make those mistakes on a model. Most controllers for a motor, a heater or a valve are PID controllers: they add three corrections, proportional (P), integral (I) and derivative (D), each with its own setting, called a gain. In this lesson you build a model of a DC motor, put a PID controller around it, tune the gains in simulation, and take them to firmware as a starting point. #PIDControl #MotorControl #SimulationFirst
 
 ## What We Are Building
 
 <Card title="PID Motor Controller Simulator" icon="star">
-A Python tool that models a DC motor (electrical and mechanical dynamics) connected to a PID controller. You set a target speed, and the simulator shows the motor's response. Change Kp, Ki, and Kd and immediately see the effect on overshoot, settling time, and steady-state error. The tool also includes an auto-tuner that sweeps gain space and finds a set of gains that meets your performance specifications.
+A Python tool that models a DC motor (electrical and mechanical dynamics) connected to a PID controller. You set a target speed, and the simulator shows the motor's response. Change the gains $K_p$, $K_i$, and $K_d$ and see the effect on three numbers: the overshoot (how far the speed passes the target), the settling time (how long until it stays within 2% of the target), and the steady-state error (the difference that remains). An auto-tuner tries many gain combinations and keeps the best.
 </Card>
 
 **Project specifications:**
 
 | Parameter | Value |
 |-----------|-------|
-| Plant | DC motor (armature circuit + mechanical load) |
+| Plant (the thing controlled) | DC motor (armature circuit + mechanical load) |
 | Controller | PID with anti-windup |
 | Input | Speed setpoint (RPM) |
 | Output | Voltage applied to motor |
 | Analysis | Step response, overshoot, settling time, steady-state error |
-| Auto-Tuner | Grid search over Kp, Ki, Kd with cost function |
+| Auto-Tuner | Grid search over $K_p$, $K_i$, $K_d$ with cost function |
 
 ## The Feedback Loop
 
@@ -49,15 +49,15 @@ A Python tool that models a DC motor (electrical and mechanical dynamics) connec
 
 
 ```text
-              error        PID         voltage       DC Motor       speed
- setpoint -->(+)--------> [Kp,Ki,Kd] ---------> [ Motor Model ] --------+---> output
-              ^  -                                                       |
-              |                                                          |
-              +----------------------------------------------------------+
-                                  feedback (measured speed)
+ setpoint   error   +-----+ voltage +-------+  speed
+ --------->( + )--->| PID |-------->| Motor |----+---->
+             ^ -    +-----+         +-------+    |
+             |                                   |
+             +-----------------------------------+
+                  measured speed (feedback)
 ```
 
-The controller reads the error (setpoint minus measured speed), computes a voltage command using the PID algorithm, and applies it to the motor. The motor responds according to its physics: electrical time constant, mechanical inertia, friction, and back-EMF. The loop repeats continuously.
+The setpoint is the speed you want. The controller subtracts the measured speed from it to get the error, calculates a voltage from the error, and applies it to the motor. The motor answers according to its physics, and the loop repeats many times each second.
 
 ## DC Motor Physics
 
@@ -66,27 +66,27 @@ The controller reads the error (setpoint minus measured speed), computes a volta
 
 ### Electrical Dynamics
 
-The armature circuit is an RL circuit with a back-EMF voltage source:
+The winding of the motor (the armature) has resistance and inductance. A turning motor is also a generator: it produces a voltage, the back-EMF, that opposes the supply and grows with the speed. The applied voltage is shared between these three:
 
 $$
 V = L \frac{di}{dt} + Ri + K_e \omega
 $$
 
-where $V$ is the applied voltage, $L$ is armature inductance, $R$ is armature resistance, $i$ is armature current, $K_e$ is the back-EMF constant, and $\omega$ is the angular velocity.
+Here $V$ is the applied voltage in volts, $L$ is the inductance in henries, $R$ is the resistance in ohms, $i$ is the current in amperes, $K_e$ is the back-EMF constant in V·s/rad, and $\omega$ is the angular velocity in rad/s. A speed of 1,000 RPM is 104.7 rad/s.
 
 ### Mechanical Dynamics
 
-The torque produced by the motor accelerates the rotor against friction:
+The current produces torque. What is left after friction accelerates the rotor:
 
 $$
 J \frac{d\omega}{dt} = K_t i - b\omega
 $$
 
-where $J$ is the moment of inertia, $K_t$ is the torque constant (equal to $K_e$ in SI units), and $b$ is the viscous friction coefficient.
+Here $J$ is the moment of inertia in kg·m², $K_t$ is the torque constant in N·m/A (equal to $K_e$ in SI units), and $b$ is the viscous friction coefficient in N·m·s/rad.
 
 ### State-Space Form
 
-Our state vector is $[i, \omega]$ and the ODE system is:
+The states are the current $i$ and the speed $\omega$. Rearranged, there is one rule for each:
 
 $$
 \frac{di}{dt} = \frac{V - Ri - K_e\omega}{L}
@@ -98,15 +98,15 @@ $$
 
 ### The PID Controller
 
-The PID output is:
+The controller adds three corrections: one proportional to the error now, one to the error added up over time, and one to how fast the error is changing:
 
 $$
 u(t) = K_p \cdot e(t) + K_i \int_0^t e(\tau)\,d\tau + K_d \frac{de}{dt}
 $$
 
-where $e(t) = \omega_{\text{setpoint}} - \omega(t)$.
+Here $u$ is the voltage sent to the motor, $e(t) = \omega_{\text{setpoint}} - \omega(t)$ is the error, and $K_p$, $K_i$ and $K_d$ are the three gains.
 
-In practice, we add anti-windup to prevent the integral term from growing without bound when the output is saturated (the motor voltage is clamped to a maximum). For the stability theory and Laplace-domain analysis behind PID tuning, see [Applied Mathematics: Feedback Control Systems](/education/applied-mathematics/feedback-control-systems/).
+The supply cannot give more than 12 V, so the output is limited (saturated). While it is at the limit, the integral must not keep growing. A limit on the integral is called anti-windup. For the stability theory and Laplace-domain analysis behind PID tuning, see [Applied Mathematics: Feedback Control Systems](/education/applied-mathematics/feedback-control-systems/).
 
 ## Complete Python Code
 
@@ -255,7 +255,7 @@ def simulate_motor_pid(Kp, Ki, Kd, setpoint_rpm=1000.0, t_end=0.5,
         # Motor electrical dynamics: di/dt = (V - R*i - Ke*w) / L
         di_dt = (voltage - m["R"] * i - m["Ke"] * w) / m["L"]
 
-        # Motor mechanical dynamics: dw/dt = (Kt*i - b*w + T_dist) / J
+        # Motor mechanical dynamics: dw/dt = (Kt*i - b*w - T_dist) / J
         dw_dt = (m["Kt"] * i - m["b"] * w - T_dist) / m["J"]
 
         # Store current state
@@ -340,7 +340,7 @@ def demo_controller_types():
 
     for (label, Kp, Ki, Kd), color in zip(configs, colors):
         t, speed, current, voltage, error = simulate_motor_pid(
-            Kp, Ki, Kd, setpoint_rpm=SETPOINT_RPM, t_end=0.5)
+            Kp, Ki, Kd, setpoint_rpm=SETPOINT_RPM, t_end=1.5)
 
         metrics = analyze_response(t, speed, SETPOINT_RPM)
 
@@ -410,7 +410,7 @@ def sweep_kp():
 
     for Kp, color in zip(kp_values, colors):
         t, speed, _, _, _ = simulate_motor_pid(
-            Kp, Ki_fixed, Kd_fixed, t_end=0.5)
+            Kp, Ki_fixed, Kd_fixed, t_end=1.5)
         metrics = analyze_response(t, speed, SETPOINT_RPM)
         overshoots.append(metrics["overshoot_pct"])
         settling_times.append(metrics["settling_time_ms"])
@@ -590,7 +590,7 @@ if __name__ == "__main__":
     print("  DC MOTOR PID CONTROLLER SIMULATOR")
     print("=" * 55)
     print(f"  Motor: R={MOTOR['R']} ohm, L={MOTOR['L']*1000} mH, "
-          f"J={MOTOR['J']*1e6} g*cm^2")
+          f"J={MOTOR['J']*1e7:.0f} g*cm^2")
     print(f"  Kt = Ke = {MOTOR['Kt']} N*m/A")
     print(f"  Friction: {MOTOR['b']} N*m*s/rad")
     print(f"  Max voltage: {MOTOR['V_max']} V")
@@ -620,11 +620,15 @@ python pid_motor_sim.py
 
 The script runs three analyses:
 
-1. **Controller comparison**: P-only, PI, and PID side by side. You will see that P-only has steady-state error (the speed never quite reaches the setpoint), PI eliminates the error but may oscillate, and PID settles faster.
+1. **Controller comparison**: P-only, PI, and PID side by side. P-only stops near 690 RPM, about 310 RPM short of the setpoint. PI removes the error but overshoots by about 32% and needs about 640 ms to settle. The small derivative term changes the result very little, because this motor behaves almost like a first-order system.
 
-2. **Kp sweep**: Shows the classic tradeoff. Higher Kp gives faster response but more overshoot.
+2. **Kp sweep**: Shows the effect of the proportional gain with $K_i$ and $K_d$ fixed. On this motor a higher $K_p$ gives a slightly faster rise and less overshoot (40.5% at $K_p = 0.02$, falling to 3.5% at $K_p = 0.5$), because proportional gain adds damping to a PI loop around a plant that is almost first-order. On plants with more lag or delay, raising $K_p$ too far brings the overshoot back.
 
-3. **Auto-tuner**: Grid-searches 800 gain combinations and prints the optimal values.
+3. **Auto-tuner**: Tries 800 gain combinations on a grid and prints the best one.
+
+Check the P-only result by hand. At a steady speed the motor needs $V = (Rb/K_t + K_e)\,\omega = 0.045\,\omega$ volts, and the controller gives $V = K_p(\omega_{\text{set}} - \omega)$. Setting the two equal gives $\omega = \omega_{\text{set}} \times 0.1 / (0.1 + 0.045)$, which is 690 RPM, as simulated. A proportional controller gives a voltage only while an error remains, so it cannot reach the setpoint.
+
+Check the step as well. With twice as many steps (`n_points=4000`) the PI overshoot changes from 32.0% to 32.2%, so the step is short enough. With a step of 7.5 ms (`n_points=200`), longer than the 2 ms electrical time constant $L/R$, the same program reports 20% and gives no warning.
 
 Expected auto-tuner output:
 
@@ -635,27 +639,27 @@ Expected auto-tuner output:
   Evaluating 800 gain combinations...
 
   Optimal gains found:
-    Kp = 0.1056
-    Ki = 2.0000
-    Kd = 0.000529
+    Kp = 0.1333
+    Ki = 0.5000
+    Kd = 0.000100
 
   Performance:
-    Overshoot:      4.2%
-    Rise time:      28.5 ms
-    Settling time:  82.0 ms
-    SS error:       0.3 RPM
+    Overshoot:      0.3%
+    Rise time:      191.7 ms
+    Settling time:  321.3 ms
+    SS error:       -1.9 RPM
 =======================================================
 
 =======================================================
   FIRMWARE-READY PID GAINS
 =======================================================
   // Paste these into your motor controller firmware
-  #define PID_KP  0.1056f
-  #define PID_KI  2.0000f
-  #define PID_KD  0.000529f
+  #define PID_KP  0.1333f
+  #define PID_KI  0.5000f
+  #define PID_KD  0.000100f
   // Setpoint: 1000 RPM
-  // Expected overshoot: 4.2%
-  // Expected settling: 82 ms
+  // Expected overshoot: 0.3%
+  // Expected settling: 321 ms
 =======================================================
 ```
 
@@ -673,7 +677,7 @@ Expected auto-tuner output:
 
 **Too high:** Fast but oscillatory, excessive overshoot, potential instability.
 
-**Analogy:** Imagine pushing a shopping cart toward a target. Kp is how hard you push for each meter of distance remaining. Push too gently and you approach slowly. Push too hard and you overshoot.
+**Analogy:** Imagine pushing a shopping cart toward a target. $K_p$ is how hard you push for each meter of distance remaining. Push too gently and you approach slowly. Push too hard and you overshoot.
   </TabItem>
 
   <TabItem label="Integral (Ki)">
@@ -697,7 +701,7 @@ Expected auto-tuner output:
 
 **Too high:** Amplifies noise, causes jitter, can destabilize the system.
 
-**Analogy:** As the cart approaches the target, Kd is like applying the brakes proportional to your approach speed. It prevents overshoot by slowing down early.
+**Analogy:** As the cart approaches the target, $K_d$ is like applying the brakes proportional to your approach speed. It prevents overshoot by slowing down early.
 
 **Noise sensitivity:** In real systems, the speed measurement contains noise. The derivative of noisy data is very noisy. A common fix is to use a low-pass filter on the derivative term, or to differentiate the measurement instead of the error.
   </TabItem>
@@ -735,11 +739,12 @@ float I = KI * integral;
 float derivative = (error - prev_error) / dt;
 float D = KD * derivative;
 float output = P + I + D;
+// add the output limit and the integral limit of the Python class here
 prev_error = error;
 set_pwm_duty(output / V_MAX);
 ```
 
-The structure is identical. The gains transfer directly. The only differences are the data types (float vs. double) and the output format (PWM duty cycle vs. voltage value).
+The structure is identical. The gains transfer if the firmware uses the same units (error in rad/s, output in volts) and the same loop period `dt`. An error measured in RPM needs gains 9.55 times smaller. The firmware also needs the output limit and the integral limit of the Python class.
 
 ## Disturbance Rejection
 
@@ -780,11 +785,11 @@ The fourth plot in the auto-tuner output shows what happens when a load disturba
 
 1. **Tune your PID in simulation, then paste the gains into firmware**
 
-   This is the single most practical takeaway from this course. Simulation lets you try hundreds of gain combinations in seconds. On real hardware, each test takes minutes and risks damaging the motor.
+   Simulation lets you try hundreds of gain combinations in under a minute. On real hardware, each test takes minutes and risks damaging the motor.
 
 2. **Each PID term has a specific job**
 
-   P responds to current error (speed), I eliminates steady-state offset (accuracy), D damps oscillation (stability). Understanding these roles lets you diagnose problems: if the speed never reaches setpoint, increase Ki; if it oscillates, increase Kd or decrease Kp.
+   P responds to current error (speed), I eliminates steady-state offset (accuracy), D damps oscillation (stability). Understanding these roles lets you diagnose problems: if the speed never reaches setpoint, increase $K_i$; if it oscillates, reduce $K_i$ or increase $K_d$.
 
 3. **Anti-windup is not optional**
 
@@ -792,11 +797,11 @@ The fourth plot in the auto-tuner output shows what happens when a load disturba
 
 4. **The simulation loop matches the firmware loop**
 
-   The fixed-step Euler integration in this lesson is the same algorithm that runs in a timer interrupt on a microcontroller. The gains transfer directly.
+   The fixed-step loop in this lesson is the same algorithm that runs in a timer interrupt on a microcontroller. The gains transfer when the units and the loop period are the same.
 
 5. **Simulation is the start, not the end**
 
-   Real systems have noise, quantization, communication delays, and nonlinearities that the model does not capture. Start with simulated gains, then fine-tune on hardware. But "fine-tune" is much easier than "start from scratch."
+   Real systems have noise, delays and limits that the model does not include. This model, for example, lets the motor draw 24 A at the start, and a real driver limits the current. Start with the simulated gains, then adjust them on the hardware. That is much easier than starting from nothing.
 
 </Steps>
 
@@ -805,11 +810,9 @@ The fourth plot in the auto-tuner output shows what happens when a load disturba
 <InArticleAd />
 
 
-Over these five lessons, you have built simulations for batteries, electrical circuits, mechanical systems, thermal networks, and control loops. The workflow is always the same: write the physics as ODEs, implement them in Python, solve with SciPy (or fixed-step Euler for control loops), and interpret the results.
+In these first five lessons you built simulations of a battery, two circuits, a suspension, a heatsink and a control loop. The workflow was the same each time: write the physics as ODEs, implement them in Python, step them forward in time, and check the result against a case you can solve by hand.
 
-Every simulation in this course produced something directly useful: a runtime prediction, a Bode plot, an optimal damping ratio, a heatsink safety verdict, or a set of PID gains. That is the goal of simulation: not to produce pretty pictures, but to answer engineering questions before you commit to hardware.
-
-Build it in simulation before you build it in hardware.
+Each simulation answered an engineering question before any hardware was bought: a runtime, a filter response, a damping ratio, a heatsink verdict, a set of PID gains. The course continues with [Sensor Fusion and State Estimation](/education/modeling-and-simulation/sensor-fusion-state-estimation/).
 
 
 

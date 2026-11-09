@@ -24,52 +24,46 @@ import { Card, CardGrid, Badge, Steps, LinkButton, FileTree } from '@astrojs/sta
 
 
 
-Every drone, phone, robot, and VR headset estimates its orientation dozens of times per second. The raw sensor data is never good enough on its own. Accelerometers measure gravity (plus every bump and vibration), and gyroscopes measure angular rate (but accumulate drift over time). Sensor fusion is the set of algorithms that merge these imperfect measurements into a single, reliable state estimate. This lesson builds both a complementary filter and a Kalman filter from scratch, then compares them side by side on simulated IMU data. #SensorFusion #KalmanFilter #IMU
+A level sensor on a tank is disturbed by waves. A gyroscope gives an angle that slowly moves away from the truth. One sensor alone is often wrong in a way that no filter can repair. But two sensors are usually wrong in different ways: one is noisy and does not drift, the other is smooth and drifts. Sensor fusion combines them so that each covers the weakness of the other. In this lesson you build the two standard methods, a complementary filter and a Kalman filter, for an IMU (inertial measurement unit: an accelerometer and a gyroscope in one chip). You test them on simulated data, where the true angle is known. #SensorFusion #KalmanFilter #IMU
 
 ## The Problem with Single Sensors
 
 <Card title="Why One Sensor Is Never Enough" icon="star">
-An accelerometer can estimate tilt angle from gravity, but it also picks up every vibration, motor pulse, and linear acceleration. A gyroscope measures angular velocity cleanly, but integrating angular rate to get angle introduces drift that grows without bound. Within 30 seconds, a typical MEMS gyroscope can drift by several degrees. Sensor fusion exploits the fact that these two failure modes are complementary: the accelerometer's noise is high-frequency, while the gyroscope's drift is low-frequency.
+An accelerometer can give the tilt angle from the direction of gravity, but it also measures every vibration and every push. A gyroscope measures cleanly how fast the angle changes. To get the angle you must add up its readings, and then every small error is added up too, so the result drifts without limit. The two errors are of different kinds. The accelerometer is wrong from moment to moment but right on average. The gyroscope is right from moment to moment but wrong in the long run. Fusion uses each sensor for what it does well.
 </Card>
 
 ### Accelerometer Angle Estimation
 
-When the sensor is stationary (or moving at constant velocity), the only acceleration it measures is gravity. The tilt angle around one axis is:
+When the sensor is still, or moves at constant velocity, the only acceleration it measures is gravity. The direction of gravity across two axes of the sensor gives the tilt angle:
 
 $$\theta_{accel} = \arctan\left(\frac{a_x}{a_z}\right)$$
 
-This works perfectly on a desk. On a moving robot or a vibrating motor mount, the signal looks like a noisy mess.
+Here $a_x$ and $a_z$ are the accelerations measured along two axes, in m/s², and $\theta_{accel}$ is the tilt in degrees. This works well on a desk. On a moving robot or a vibrating motor mount, every push is read as a change of tilt.
 
 ### Gyroscope Angle Estimation
 
-The gyroscope outputs angular rate $\omega$ in degrees per second. To get angle, you integrate:
+The gyroscope gives the angular rate $\omega$ in degrees per second. To get the angle, add the rate times the time step $\Delta t$ (in seconds) to the previous angle:
 
 $$\theta_{gyro}(t) = \theta_{gyro}(t - \Delta t) + \omega \cdot \Delta t$$
 
-This is smooth and responsive, but each small measurement error accumulates. After a few minutes, the estimated angle can be off by tens of degrees.
+The result is smooth and fast, but every small error in $\omega$ is added again at each step. A steady error of only 0.2 degrees per second gives 12 degrees of error after one minute.
 
 ## Sensor Fusion Block Diagram
 
 <InArticleAd />
 
 
-```
-                    +-----------------+
-  Accelerometer --->| Low-pass filter |---+
-  (noisy, stable)   +-----------------+   |
-                                          +--> Fused angle estimate
-  Gyroscope ------->| High-pass filter|---+
-  (smooth, drifts)  +-----------------+
+Low-pass means "keep the slow part" and high-pass means "keep the fast part". Fusion takes the slow part of the angle from the accelerometer and the fast part from the gyroscope:
 
-  Complementary filter:
-    angle = alpha * (angle + gyro * dt) + (1 - alpha) * accel_angle
-
-  Kalman filter:
-    Predict:  x_hat = A * x_hat + B * u
-              P     = A * P * A^T + Q
-    Update:   K     = P * H^T * (H * P * H^T + R)^(-1)
-              x_hat = x_hat + K * (z - H * x_hat)
-              P     = (I - K * H) * P
+```text
+  Accelerometer    ┌──────────────────┐
+  noisy, no drift ►│ keep the slow    │──┐
+                   │ part (low-pass)  │  │
+                   └──────────────────┘  ├──► angle
+  Gyroscope        ┌──────────────────┐  │    estimate
+  smooth, drifts ─►│ keep the fast    │──┘
+                   │ part (high-pass) │
+                   └──────────────────┘
 ```
 
 ## The Complementary Filter
@@ -77,26 +71,28 @@ This is smooth and responsive, but each small measurement error accumulates. Aft
 <InArticleAd />
 
 
-The complementary filter is elegant in its simplicity. It is a weighted blend of two estimates: trust the gyroscope for short-term changes (high-frequency), and trust the accelerometer for long-term stability (low-frequency). A single parameter $\alpha$ (typically 0.95 to 0.98) controls the tradeoff:
+The complementary filter is a weighted mix of two estimates. At each step it takes the previous angle, adds the turn measured by the gyroscope, and then pulls the result a little toward the accelerometer angle. One number, $\alpha$ (typically 0.95 to 0.98), sets how weak this pull is:
 
 $$\theta[n] = \alpha \cdot (\theta[n-1] + \omega[n] \cdot \Delta t) + (1 - \alpha) \cdot \theta_{accel}[n]$$
 
-When $\alpha = 0.98$, you trust the gyroscope 98% and the accelerometer 2% at each time step. The gyroscope provides the fast response, while the accelerometer slowly corrects any drift. This filter runs on any microcontroller with a single multiply-add operation per sample.
+Here $\theta[n]$ is the angle estimate at step $n$. With $\alpha = 0.98$, each step takes 98% from the gyroscope path and 2% from the accelerometer. The gyroscope gives the fast response, and the accelerometer slowly removes the drift. The filter needs one multiplication and one addition per sample, so it runs on any microcontroller.
+
+The method is not only for motion sensors. A tank level known from a level sensor (noisy, no drift) and from the total of a flow meter (smooth, drifts) is combined in the same way.
 
 ### Choosing Alpha
 
-The time constant of the complementary filter is:
+The time constant $\tau$, in seconds, is the time the filter needs to remove most of an old error:
 
 $$\tau = \frac{\alpha \cdot \Delta t}{1 - \alpha}$$
 
-For $\alpha = 0.98$ and $\Delta t = 0.01$ s (100 Hz), $\tau = 0.49$ s. Signals faster than this come mostly from the gyroscope; slower signals come from the accelerometer. If you increase $\alpha$, drift correction becomes slower but the output is smoother. If you decrease $\alpha$, drift corrects faster but accelerometer noise leaks through.
+For $\alpha = 0.98$ and $\Delta t = 0.01$ s (100 Hz), $\tau = 0.49$ s. Changes faster than this come mostly from the gyroscope, and slower changes from the accelerometer. A higher $\alpha$ gives a smoother output but corrects drift more slowly. A lower $\alpha$ corrects drift faster but lets more accelerometer noise through.
 
 ## The Kalman Filter
 
 <InArticleAd />
 
 
-The Kalman filter is the optimal linear estimator for Gaussian noise. Instead of a fixed weighting like the complementary filter, it computes a time-varying gain based on how much it trusts the model versus the measurement. The core idea has two steps.
+The Kalman filter makes the same kind of mix, but it calculates the weight itself, again at every step. It keeps two things: its best estimate, and a number that says how uncertain that estimate is. When its own prediction is uncertain it leans on the measurement, and when the measurement is noisy it leans on the prediction. Each cycle has two steps.
 
 ```mermaid
 flowchart TD
@@ -108,30 +104,40 @@ flowchart TD
 
 ### Predict Step
 
-Given a state vector $\mathbf{x}$ (containing angle and gyro bias) and a process model:
+In words: move the estimate forward in time with the gyroscope reading, and make its uncertainty larger, because a prediction is less certain than the estimate it started from.
 
 $$\hat{\mathbf{x}}^- = \mathbf{A} \hat{\mathbf{x}} + \mathbf{B} u$$
+
 $$\mathbf{P}^- = \mathbf{A} \mathbf{P} \mathbf{A}^T + \mathbf{Q}$$
 
-Here $\mathbf{A}$ is the state transition matrix, $\mathbf{B}$ maps the control input (gyro rate), $\mathbf{P}$ is the error covariance, and $\mathbf{Q}$ is the process noise covariance.
+The symbols:
+
+- $\hat{\mathbf{x}}$ is the estimate of the state (the quantities to be found, here the angle and the gyroscope error). The hat means "estimate" and the minus sign means "before the measurement is used".
+- $\mathbf{A}$ says how the state moves from one step to the next, and $\mathbf{B}$ says how the input $u$ (the gyroscope rate) changes it.
+- $\mathbf{P}$ is the uncertainty of the estimate, held as variances.
+- $\mathbf{Q}$ is the uncertainty that each prediction adds (the process noise).
 
 ### Update Step
 
-When a measurement $z$ (accelerometer angle) arrives:
+In words: compare the measurement with the prediction, move the estimate toward the measurement by a fraction $\mathbf{K}$ of the difference, and make the uncertainty smaller.
 
 $$\mathbf{K} = \mathbf{P}^- \mathbf{H}^T (\mathbf{H} \mathbf{P}^- \mathbf{H}^T + \mathbf{R})^{-1}$$
+
 $$\hat{\mathbf{x}} = \hat{\mathbf{x}}^- + \mathbf{K}(z - \mathbf{H}\hat{\mathbf{x}}^-)$$
+
 $$\mathbf{P} = (\mathbf{I} - \mathbf{K}\mathbf{H})\mathbf{P}^-$$
 
-The Kalman gain $\mathbf{K}$ automatically adjusts: when the measurement is trustworthy ($\mathbf{R}$ is small), the gain is large and the filter follows the measurement closely. When the measurement is noisy ($\mathbf{R}$ is large), the gain is small and the filter relies on the model prediction. For the matrix algebra behind these operations, see [Applied Mathematics: Linear Algebra, Vectors, and Matrices](/education/applied-mathematics/linear-algebra-vectors-matrices/).
+Here $z$ is the measurement (the accelerometer angle), $\mathbf{H}$ picks from the state the quantity that is measured, $\mathbf{R}$ is the variance of the measurement noise, and $\mathbf{I}$ is the identity matrix.
+
+For a single quantity the gain $\mathbf{K}$, called the Kalman gain, is simply $K = P / (P + R)$. An uncertain prediction (large $P$) gives a gain near 1, and the filter follows the measurement. A noisy measurement (large $R$) gives a gain near 0, and the filter keeps its prediction. For the matrix algebra, see [Applied Mathematics: Linear Algebra, Vectors, and Matrices](/education/applied-mathematics/linear-algebra-vectors-matrices/).
 
 ### State Vector for IMU Fusion
 
-For a 1-axis IMU fusion problem, the state vector is:
+For one axis of an IMU, the state holds two quantities:
 
 $$\mathbf{x} = \begin{bmatrix} \theta \\ b \end{bmatrix}$$
 
-where $\theta$ is the angle and $b$ is the gyroscope bias (the drift rate). The filter estimates both simultaneously. This is a key advantage over the complementary filter: the Kalman filter explicitly models and corrects for gyro bias.
+where $\theta$ is the angle and $b$ is the gyroscope bias, the steady error of its rate in degrees per second. The filter estimates both and subtracts the bias from every gyroscope reading. The complementary filter cannot do this.
 
 ## Project: IMU Orientation Estimator
 
@@ -139,7 +145,7 @@ where $\theta$ is the angle and $b$ is the gyroscope bias (the drift rate). The 
 
 
 <Card title="What You Will Build" icon="rocket">
-A complete IMU orientation estimation pipeline that generates realistic simulated sensor data, applies both a complementary filter and a Kalman filter, and produces comparison plots showing that fusion is dramatically better than either raw sensor alone. The simulation includes realistic MEMS sensor noise characteristics, gyroscope drift, and transient disturbances.
+A program that makes 60 seconds of simulated IMU data with a known true angle, applies a complementary filter and a Kalman filter, and prints the error of each sensor and each filter. The noise, the gyroscope drift and the bumps have the size found in low-cost MEMS sensors (small motion sensors made in silicon).
 </Card>
 
 ### Complete Runnable Code
@@ -180,8 +186,9 @@ accel_angle[bump_indices] += np.random.uniform(-15, 15, size=20)
 # --- Simulated gyroscope ---
 # Smooth but drifts over time
 gyro_noise_std = 0.3   # deg/s
-gyro_bias_rate = 0.02  # deg/s drift accumulation rate
-gyro_bias = np.cumsum(gyro_bias_rate * dt * np.random.randn(N))
+gyro_bias_0 = 0.2      # deg/s constant bias at switch-on
+gyro_bias_rate = 0.02  # deg/s per sqrt(s), random walk of the bias
+gyro_bias = gyro_bias_0 + np.cumsum(gyro_bias_rate * np.sqrt(dt) * np.random.randn(N))
 gyro_rate = true_rate + gyro_noise_std * np.random.randn(N) + gyro_bias
 
 # --- Raw gyro integration (to show drift) ---
@@ -213,7 +220,7 @@ def complementary_filter(accel_angle, gyro_rate, dt, alpha=0.98):
 # Kalman Filter for IMU Fusion
 # ============================================================
 def kalman_filter_imu(accel_angle, gyro_rate, dt,
-                      Q_angle=0.001, Q_bias=0.003, R_measure=3.0):
+                      Q_angle=0.001, Q_bias=0.00001, R_measure=10.0):
     """
     2-state Kalman filter: estimates angle and gyro bias.
 
@@ -288,7 +295,7 @@ def kalman_filter_imu(accel_angle, gyro_rate, dt,
 comp_angle = complementary_filter(accel_angle, gyro_rate, dt, alpha=0.98)
 kalman_angle, kalman_bias = kalman_filter_imu(
     accel_angle, gyro_rate, dt,
-    Q_angle=0.001, Q_bias=0.003, R_measure=4.0
+    Q_angle=0.001, Q_bias=0.00001, R_measure=10.0
 )
 
 # ============================================================
@@ -363,17 +370,17 @@ print("\nPlot saved: imu_sensor_fusion.png")
 
 <Steps>
 
-1. **Generates a realistic true trajectory.** A slow sinusoidal angle profile that mimics a robot arm or gimbal moving back and forth.
+1. **Makes a true angle.** A slow back and forth motion, as of a robot arm.
 
-2. **Simulates accelerometer data.** Adds Gaussian noise, decaying vibration, and random impulse bumps to the true angle. This represents what a real MEMS accelerometer produces on a moving platform.
+2. **Simulates the accelerometer.** It adds random noise, a vibration that fades, and 20 sudden bumps to the true angle.
 
-3. **Simulates gyroscope data.** Adds small Gaussian noise to the true rate, plus a slowly accumulating bias that represents MEMS gyro drift. Integrating this signal produces an angle that diverges from truth over time.
+3. **Simulates the gyroscope.** It adds a little random noise to the true rate, and a bias of 0.2 degrees per second that also wanders slowly. Adding up this signal gives an angle that moves away from the truth.
 
-4. **Applies the complementary filter.** A single line of code per sample blends the gyro prediction with the accel measurement. The $\alpha = 0.98$ weighting trusts the gyroscope for fast motion and the accelerometer for slow drift correction.
+4. **Applies the complementary filter.** One line of code per sample, with $\alpha = 0.98$.
 
-5. **Applies the Kalman filter.** A two-state filter (angle + bias) that predicts using the gyroscope, then corrects using the accelerometer. It automatically estimates the gyroscope bias and subtracts it from future predictions.
+5. **Applies the Kalman filter.** A filter with two states (angle and bias) that predicts with the gyroscope and corrects with the accelerometer. It estimates the gyroscope bias and subtracts it from later predictions.
 
-6. **Plots all four estimates.** The comparison makes the improvement immediately visible: raw sensors are noisy or drifting, while fused estimates track the true angle closely.
+6. **Prints and plots the errors.** The RMSE (root mean square error, the typical distance from the true angle) is 3.3 degrees for the accelerometer alone and 7.6 degrees for the gyroscope alone. It is 0.35 degrees for the complementary filter and 0.28 degrees for the Kalman filter: about ten times better than the better sensor. You can measure this only because the simulation knows the true angle.
 
 </Steps>
 
@@ -384,26 +391,26 @@ print("\nPlot saved: imu_sensor_fusion.png")
 
 ### Complementary Filter Tuning
 
-The only knob is $\alpha$. Here is what happens when you change it:
+The only setting is $\alpha$:
 
 | Alpha | Behavior | Best for |
 |-------|----------|----------|
-| 0.99 | Very smooth, slow drift correction | Stable platforms with good gyroscope |
+| 0.99 | Very smooth, slow drift correction | Strong vibration, good gyroscope |
 | 0.98 | Good balance (default) | General purpose |
-| 0.95 | Faster drift correction, more accel noise | High-vibration environments |
-| 0.90 | Mostly follows accelerometer | Poor gyroscope quality |
+| 0.95 | Faster drift correction, more accelerometer noise | A gyroscope that drifts quickly, little vibration |
+| 0.90 | Mostly follows the accelerometer | Poor gyroscope |
 
 ### Kalman Filter Tuning
 
-The Kalman filter has three tuning parameters:
+The Kalman filter has three settings:
 
 | Parameter | Meaning | Effect of increasing |
 |-----------|---------|---------------------|
-| `Q_angle` | Process noise for angle | Filter trusts model less, follows measurements more |
-| `Q_bias`  | Process noise for bias | Bias estimate changes faster, more responsive to drift |
-| `R_measure` | Measurement noise | Filter trusts accelerometer less, relies on gyro more |
+| `Q_angle` | Process noise for angle | Filter trusts its prediction less, follows measurements more |
+| `Q_bias`  | Process noise for bias | Bias estimate changes faster |
+| `R_measure` | Measurement noise | Filter trusts the accelerometer less, relies on the gyroscope more |
 
-The ratio $Q/R$ determines how aggressive the filter is. A large $Q/R$ makes it responsive but noisier. A small $Q/R$ makes it smooth but slower to correct.
+The ratio $Q/R$ decides how fast the filter reacts. A large $Q/R$ makes it fast but noisier. A small $Q/R$ makes it smooth but slower to correct. Start from what the sensors really do: $R$ is the variance of the accelerometer angle, which you can measure with the sensor at rest.
 
 ## When to Use Which Filter
 
@@ -437,14 +444,12 @@ The ratio $Q/R$ determines how aggressive the filter is. A large $Q/R$ makes it 
 <InArticleAd />
 
 
-The 1-axis problem in this lesson extends directly to 3D. A full IMU produces three accelerometer axes and three gyroscope axes. The state vector expands to include roll, pitch, and yaw (or quaternion components), each with its own bias term. The filter structure is identical; only the matrix dimensions change.
+A full IMU has three accelerometer axes and three gyroscope axes. The state then holds three angles (roll, pitch and yaw), each with its own bias. The filter is the same, with larger matrices.
 
-For roll and pitch, the accelerometer provides a gravity reference. For yaw, there is no gravity reference (gravity is parallel to the yaw axis), so a magnetometer is typically added as a third sensor. This is why most IMU modules include a magnetometer and are called 9-DOF (9 degrees of freedom): 3 accel + 3 gyro + 3 mag.
-
-The same fusion principles apply. The Kalman filter simply grows from a 2-state system to a 6-state or 7-state system. Libraries like Madgwick and Mahony implement efficient versions of this for embedded platforms.
+For roll and pitch, gravity gives the accelerometer a reference. For yaw, the turn about the vertical axis, gravity gives none, so a magnetometer (a compass sensor) is added. This is why many IMU modules are called 9-DOF (nine degrees of freedom): three axes each of accelerometer, gyroscope and magnetometer. The Madgwick and Mahony filters are efficient versions of this for small processors.
 
 :::tip[Instrument it]
-A Kalman or complementary filter is only as good as the sensors feeding it: the whole point of fusion is that no single sensor is trustworthy alone. An IMU's gyro drifts but is smooth, its accelerometer is noisy but absolute, and fused they give an angle you can believe. Tune the filter's noise covariances to the real sensor specs, not to guesses, and the [STM32 or ESP32 that reads the IMU](/education/sensor-actuator-interfacing-stm32/) can run this exact filter on-device and [report a clean state](/education/iot-systems/) from messy inputs straight to [siliconwit.io](https://siliconwit.io).
+A fusion filter is only as good as the numbers you give it about its sensors. Set the noise values from the real sensors, measured at rest, not from guesses. Then the [STM32 or ESP32 that reads the IMU](/education/sensor-actuator-interfacing-stm32/) can run this same filter on the device and [report one clean angle](/education/iot-systems/) to [siliconwit.io](https://siliconwit.io).
 :::
 
 ## Practical Considerations
@@ -454,17 +459,22 @@ A Kalman or complementary filter is only as good as the sensors feeding it: the 
 
 ### Sample Rate Matters
 
-The complementary filter's effective time constant depends on the sample rate. At 100 Hz with $\alpha = 0.98$, the time constant is about 0.5 seconds. At 50 Hz with the same $\alpha$, the time constant doubles. When you change sample rate, you should re-tune $\alpha$.
+The time constant of the complementary filter depends on the sample rate. At 100 Hz with $\alpha = 0.98$ it is about 0.5 seconds. At 50 Hz with the same $\alpha$ it is twice as long. When you change the sample rate, set $\alpha$ again.
 
 ### Numerical Stability
 
-The Kalman filter's covariance matrix $\mathbf{P}$ can become non-positive-definite due to floating-point errors over thousands of iterations. On embedded systems, the Joseph form of the covariance update is more numerically stable:
+After thousands of steps, rounding errors can damage the uncertainty matrix $\mathbf{P}$, for example by making a variance negative, and the filter then fails. On small processors, the Joseph form of the update resists this better:
 
 $$\mathbf{P} = (\mathbf{I} - \mathbf{K}\mathbf{H})\mathbf{P}^-(\mathbf{I} - \mathbf{K}\mathbf{H})^T + \mathbf{K}\mathbf{R}\mathbf{K}^T$$
 
 ### Real Sensor Data
 
-The simulation in this lesson uses noise parameters typical of low-cost MEMS sensors (MPU6050, BMI160, LSM6DS3). If you have a real IMU, you can log data over USB or SD card, load the CSV into Python, and run the same filters. The tuning process is the same: adjust Q, R, and alpha until the output looks clean and responsive.
+The simulation uses noise values typical of low-cost MEMS sensors (MPU6050, BMI160, LSM6DS3). With a real IMU, log data to a CSV file, load it into Python, and run the same filters.
+
+A real sensor has no known true angle, so a smooth line proves nothing. Make two tests where you do know the answer:
+
+- Leave the sensor still for ten minutes. The estimate must not move away. If it does, the drift is not being corrected.
+- Turn the sensor quickly to a known angle, against a stop. The estimate must arrive without delay and without overshoot.
 
 ## Exercises
 
@@ -473,11 +483,11 @@ The simulation in this lesson uses noise parameters typical of low-cost MEMS sen
 
 1. **Alpha sweep.** Run the complementary filter with $\alpha$ values from 0.80 to 0.99 in steps of 0.01. Plot RMSE versus $\alpha$. Where is the minimum? Does it match the theoretical optimum?
 
-2. **Kalman tuning.** Hold Q_angle and Q_bias fixed. Sweep R_measure from 0.1 to 100. Plot RMSE versus R. Find the value that minimizes error for this particular noise profile.
+2. **Kalman tuning.** Hold `Q_angle` and `Q_bias` fixed. Sweep `R_measure` from 0.1 to 100. Plot RMSE versus `R_measure`. Find the value that minimizes error for this particular noise profile.
 
-3. **Steady-state gain.** After the Kalman filter converges, the gain K becomes approximately constant. Print K at each time step and observe convergence. How many samples does it take?
+3. **Steady-state gain.** After the Kalman filter converges, the gain $\mathbf{K}$ becomes approximately constant. Print $\mathbf{K}$ at each time step and observe convergence. How many samples does it take?
 
-4. **Higher noise.** Increase accel_noise_std to 10 degrees and gyro_bias_rate to 0.1 deg/s. How does each filter respond? Which is more robust to extreme conditions?
+4. **Higher noise.** Increase `accel_noise_std` to 10 degrees and `gyro_bias_rate` to 0.1. How does each filter respond? Which is more robust to extreme conditions?
 
 5. **Three-axis extension.** Extend the code to handle roll and pitch simultaneously using a 4-state Kalman filter (roll, pitch, roll_bias, pitch_bias). Generate 3-axis accel and gyro data.
 

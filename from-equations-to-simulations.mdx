@@ -24,12 +24,12 @@ import { Card, CardGrid, Badge, Steps, LinkButton, FileTree } from '@astrojs/sta
 
 
 
-Every engineering simulation follows the same pattern: write the physics as equations, turn those equations into code, hand them to a numerical solver, and interpret the plots. In this lesson you will learn that pattern by building a battery discharge simulator that predicts the runtime of a lithium cell under a realistic load profile. By the end, you will have a working Python script and a clear understanding of how SciPy's `solve_ivp` works. #Simulation #Python #BatteryModeling
+A battery-powered sensor that stops a day earlier than the calculation promised costs a lost day of data and a trip to the site. Dividing the capacity by the average current cannot show what bursts of current and a falling voltage do. In this lesson you build a simulator in Python that predicts the runtime of a lithium cell under a realistic load. You also learn the pattern every simulation follows: write the physics as equations, turn them into code, give them to a numerical solver, and check the result. #Simulation #Python #BatteryModeling
 
 ## What We Are Building
 
 <Card title="Battery Discharge Simulator" icon="star">
-A Python script that models a single lithium-ion cell (3.0 V to 4.2 V range, 3000 mAh capacity). You define a load current profile, and the simulator predicts voltage vs. time, state of charge vs. time, and total runtime before the cell hits its cutoff voltage.
+A Python script that models a single lithium-ion cell (3.0 V to 4.2 V range, 3000 mAh capacity). You define a load current profile, and the simulator predicts the voltage, the state of charge (SOC, the fraction of charge left), and the runtime before the cell reaches its cutoff voltage.
 </Card>
 
 **Project specifications:**
@@ -37,50 +37,42 @@ A Python script that models a single lithium-ion cell (3.0 V to 4.2 V range, 300
 | Parameter | Value |
 |-----------|-------|
 | Cell Chemistry | Lithium-ion (single cell) |
-| Nominal Voltage | 3.7 V |
 | Full Charge Voltage | 4.2 V |
 | Cutoff Voltage | 3.0 V |
 | Capacity | 3000 mAh (3.0 Ah) |
 | Load Profile | Variable (standby + active bursts) |
 | Solver | SciPy `solve_ivp` (RK45) |
-| Output | Voltage vs. time plot, SOC vs. time plot, predicted runtime |
 
 ## The Simulation Workflow
 
 <InArticleAd />
 
 
-Before we dive into batteries, let's establish the general pattern that every simulation in this course will follow.
+A simulation is a model stepped forward in time. The model is a state (the few numbers that describe the system now) and a rule (how fast each number changes). Think of a water tank with a tap at the bottom: the state is the level, and the rule says the level falls at the rate the water leaves.
 
-```mermaid
-flowchart TD
-    A[1. Identify\nthe physics] --> B[2. Write\nthe ODE]
-    B --> C[3. Implement\nin Python]
-    C --> D[4. Solve with\nsolve_ivp]
-    D --> E[5. Plot and\ninterpret]
-```
+The computer applies the rule over a short time step to get the new state, and repeats this thousands of times. A step that is too long misses what happens inside it, and the answer is wrong with no error message. Every simulation in this course follows the same five steps.
 
 <Steps>
 
 1. **Identify the physics**
 
-   What are the governing equations? For a battery, we need the relationship between voltage, state of charge, and current draw.
+   Which quantities matter, and what law connects them? For a battery, we need the relationship between voltage, state of charge, and load current.
 
 2. **Write the ODE**
 
-   Express the system as a set of first-order ordinary differential equations (ODEs) in the form $\dot{y} = f(t, y)$.
+   Write the rule as an ordinary differential equation (ODE), an equation that gives the rate of change of a quantity. The standard form is $\dot{y} = f(t, y)$: the rate of change of the state $y$ (the dot means "per unit of time") depends on the time $t$ and on the state itself.
 
 3. **Implement in Python**
 
-   Write a function that takes time `t` and state vector `y`, and returns the derivative `dydt`.
+   Write a function that takes the time `t` and the state `y`, and returns the rates of change `dydt`.
 
 4. **Solve with `solve_ivp`**
 
-   Hand your function to SciPy's solver. Specify initial conditions, time span, and any events (like "stop when voltage hits 3.0 V").
+   Give your function to SciPy's solver with the starting state, the time span, and any events (such as "stop when the voltage reaches 3.0 V").
 
 5. **Plot and interpret**
 
-   Visualize the results. Extract engineering quantities (runtime, peak temperature, settling time, etc.).
+   Plot the results and read the engineering answer from them (runtime, peak temperature, settling time). Then check that answer against a case you can solve by hand.
 
 </Steps>
 
@@ -106,8 +98,6 @@ print(f"SciPy:      {scipy.__version__}")
 print(f"Matplotlib: {matplotlib.__version__}")
 ```
 
-That is all the software you need for this entire course.
-
 ## Battery Discharge Physics
 
 <InArticleAd />
@@ -115,85 +105,82 @@ That is all the software you need for this entire course.
 
 ### The Voltage-SOC Relationship
 
-A lithium-ion cell does not have a constant voltage. As it discharges, the open-circuit voltage (OCV) drops following a characteristic curve that depends on the state of charge (SOC). The SOC is simply the fraction of remaining capacity:
+A lithium-ion cell does not hold one voltage. Its open-circuit voltage (OCV), the voltage at its terminals when no current flows, falls as the cell empties. So the model needs the state of charge (SOC): the fraction of the capacity that is still in the cell, 1 when full and 0 when empty.
 
-$$
-\text{SOC}(t) = 1 - \frac{1}{Q} \int_0^t I(\tau) \, d\tau
-$$
-
-where $Q$ is the total capacity in ampere-hours and $I(t)$ is the discharge current.
-
-As a differential equation:
+The rule for this state: the SOC falls at a rate equal to the current divided by the capacity.
 
 $$
 \frac{d(\text{SOC})}{dt} = -\frac{I(t)}{Q}
 $$
 
-For the math behind solving ordinary differential equations like this one, see [Applied Mathematics: Differential Equations in Real Systems](/education/applied-mathematics/differential-equations-real-systems/).
+Here $Q$ is the capacity in ampere-hours (Ah) and $I(t)$ is the discharge current in amperes (A), the input of the model. This is the ODE we will solve. One trap: $Q$ is in ampere-hours and the simulation counts seconds, so the code divides by $Q \times 3600$.
 
-This is the ODE we will solve. The current $I(t)$ is our input (the load profile), and the SOC is our state variable.
+For the math behind solving ordinary differential equations like this one, see [Applied Mathematics: Differential Equations in Real Systems](/education/applied-mathematics/differential-equations-real-systems/).
 
 ### Modeling the Open-Circuit Voltage
 
-Real lithium cells have a voltage curve that is relatively flat in the middle and drops steeply near empty. A common empirical model uses a polynomial fit:
+The simulator must turn the SOC into a voltage. A common empirical model (a curve fitted to measurements, not derived from physics) is a polynomial:
 
 $$
 V_{\text{OCV}}(\text{SOC}) = a_0 + a_1 \cdot \text{SOC} + a_2 \cdot \text{SOC}^2 + a_3 \cdot \text{SOC}^3
 $$
 
-We will use coefficients that approximate a typical 18650 cell:
+Our coefficients are $a_0 = 3.0$, $a_1 = 0.55$, $a_2 = 0.95$ and $a_3 = -0.30$, all in volts. They give 3.0 V when the cell is empty and $3.0 + 0.55 + 0.95 - 0.30 = 4.2$ V when it is full:
 
 ```text
-Voltage vs. SOC (approximate shape)
+Open-circuit voltage of the model against SOC
 
-  4.2 V |          .........
-        |        ..
-  3.7 V |  .....
-        | .
+  4.2 V |                    .
+  4.0 V |                 .
+  3.8 V |               .
+  3.6 V |            .
+  3.4 V |         .
+  3.2 V |     .
   3.0 V |.
-        +--------------------
-        0%    50%    100%  SOC
+        +----+----+----+----+
+        0%  25%  50%  75%  100%  SOC
 ```
+
+A real cell is flatter in the middle of this curve and falls more steeply near empty. For a real design, fit the curve to the measured discharge data of your own cell. The structure of the simulation stays the same.
 
 ### Internal Resistance
 
-The terminal voltage under load is lower than the OCV due to internal resistance:
+Under load, the voltage at the terminals is lower than the OCV, because the current must pass through the cell's own internal resistance. The loss is the current times that resistance:
 
 $$
 V_{\text{terminal}} = V_{\text{OCV}}(\text{SOC}) - I(t) \cdot R_{\text{internal}}
 $$
 
-For a typical 18650 cell, $R_{\text{internal}} \approx 0.05 \, \Omega$.
+For a typical 18650 cell (a common cylindrical lithium cell), $R_{\text{internal}} \approx 0.05 \, \Omega$. A burst of 0.5 A then lowers the terminal voltage by $0.5 \times 0.05 = 0.025$ V. This small drop decides when the cell reaches its cutoff voltage.
 
 ## The Load Profile
 
 <InArticleAd />
 
 
-Instead of a constant current draw, let's model something realistic: an IoT sensor node that sleeps most of the time and wakes up periodically to take measurements and transmit data.
+A sensor node does not draw a constant current. It sleeps most of the time and wakes to measure and transmit. The model repeats this pattern every 10 seconds:
 
 ```text
 Current draw over time (repeating pattern)
 
-  500 mA |    ___          ___
-         |   |   |        |   |
-  10 mA  |___|   |________|   |____
-         |
-         +---------------------------
-           0s   2s   10s   12s   20s
+  500 mA |___          ___          ___
+         |   |        |   |        |   |
+   10 mA |   |________|   |________|   |____
+         +---+--------+---+--------+---+-----
+         0   2       10  12       20  22   s
 
-         Sleep: 10 mA for 8 seconds
          Active: 500 mA for 2 seconds
-         Cycle: 10 seconds
-         Average: 108 mA
+         Sleep:  10 mA for 8 seconds
 ```
+
+The average current is $(0.500 \times 2 + 0.010 \times 8) / 10 = 0.108$ A, or 108 mA.
 
 ## Complete Python Code
 
 <InArticleAd />
 
 
-Here is the full battery discharge simulator. Save it as `battery_simulator.py` and run it.
+Here is the full battery discharge simulator. Save it as `battery_simulator.py` and run it. Three parts carry the model: `battery_ode` is the rule, `voltage_cutoff_event` stops the run at 3.0 V, and `max_step=1.0` keeps every step shorter than the 2 second burst.
 
 ```python
 """
@@ -397,22 +384,31 @@ You should see output like this:
   Duty cycle:          20%
   Average current:     108 mA
 -------------------------------------------------------
-  Predicted runtime:   26.8 hours
-  Final SOC:           3.2%
+  Predicted runtime:   26.6 hours
+  Final SOC:           4.2%
   Final voltage:       3.00 V
   Simple estimate:     27.8 hours (capacity / avg current)
-  Difference:          1.0 hours
+  Difference:          1.2 hours
 =======================================================
 ```
 
-The simulation predicts about 26.8 hours of runtime, while the naive calculation (capacity divided by average current) gives 27.8 hours. The difference comes from the fact that the simulation accounts for internal resistance losses and the nonlinear voltage curve, which causes the cutoff to trigger before the cell is completely empty.
+The simulation predicts 26.6 hours. Dividing the capacity by the average current gives $3.0 / 0.108 = 27.8$ hours. The 1.2 hours between them has a cause. During a burst, the internal resistance lowers the terminal voltage by 0.025 V, so the cell reaches the 3.0 V cutoff while 4.2% of its charge is still inside. And 4.2% of 27.8 hours is 1.2 hours.
+
+### Can you trust the answer?
+
+A simulation prints a wrong number as calmly as a right one. Two checks take a minute:
+
+- Compare with a case you can solve by hand. Here the simulation is within 5% of the hand estimate, and the difference is explained.
+- Halve the step and run again. With `max_step=0.5` the program still prints 26.6 hours, so the step is short enough.
+
+Remove `max_step=1.0` and the solver chooses long steps that jump over most of the bursts. The same program then reports that the cell is still 75% full after 55.6 hours, with no warning.
 
 ## Understanding `solve_ivp`
 
 <InArticleAd />
 
 
-The core of every simulation in this course is SciPy's `solve_ivp` function. Let's break down how we used it.
+SciPy's `solve_ivp` ("solve an initial value problem") does the stepping. Its default method, RK45, is a Runge-Kutta method: it measures the rate of change at several points inside each step and chooses the step length itself. We used three of its features.
 
 <Tabs>
   <TabItem label="The ODE Function">
@@ -427,13 +423,11 @@ def battery_ode(t, y):
     return [dsoc_dt]          # Return derivatives
 ```
 
-The solver calls this function repeatedly at different time points. Each call returns the rate of change of the state variables. The solver uses these rates to step forward in time.
+The solver calls this function many times and uses the returned rates to step forward in time.
 
 Key rules:
-- `t` is a scalar (the current time)
 - `y` is a 1D array of state variables
 - Return a list or array of the same length as `y`
-- The function must be deterministic (same inputs produce same outputs)
 
 </TabItem>
 
@@ -452,7 +446,7 @@ voltage_cutoff_event.terminal = True   # Stop the solver
 voltage_cutoff_event.direction = -1    # Only when decreasing
 ```
 
-The solver watches for the return value to cross zero. When `terminal=True`, it stops the integration at that exact moment. The `direction=-1` means it only triggers when the value goes from positive to negative (voltage falling below cutoff).
+The solver watches for the return value to cross zero. With `terminal=True` it stops at that moment. With `direction=-1` it reacts only to a falling value.
   </TabItem>
 
   <TabItem label="Dense Output">
@@ -467,7 +461,7 @@ t_plot = np.linspace(0, sol.t[-1], 2000)
 soc_plot = sol.sol(t_plot)[0]
 ```
 
-Without dense output, you only get the solver's internal time steps, which may be unevenly spaced. Dense output lets you create smooth plots at any resolution you want.
+Without it, you only get the solver's own time steps, which are unevenly spaced.
   </TabItem>
 </Tabs>
 
@@ -476,15 +470,13 @@ Without dense output, you only get the solver's internal time steps, which may b
 <InArticleAd />
 
 
-Now that you have a working simulator, change some parameters and see what happens.
-
 <CardGrid>
   <Card title="Increase Active Current" icon="warning">
   Change `ACTIVE_CURRENT_A` to `1.0` (1 A bursts). How much does the runtime drop? Notice that the voltage sags more during active periods because of the higher resistive drop across `R_INTERNAL`.
   </Card>
 
   <Card title="Change Duty Cycle" icon="setting">
-  Try `ACTIVE_DURATION_S = 1.0` and `CYCLE_PERIOD_S = 30.0` (3.3% duty cycle, typical of a real IoT sensor). The runtime should increase dramatically.
+  Try `ACTIVE_DURATION_S = 1.0` and `CYCLE_PERIOD_S = 30.0` (3.3% duty cycle). Estimate the runtime by hand first.
   </Card>
 
   <Card title="Larger Cell" icon="rocket">
@@ -505,23 +497,19 @@ Now that you have a working simulator, change some parameters and see what happe
 
 1. **Every simulation follows the same pattern**
 
-   Write the ODE, implement it as a Python function, call `solve_ivp`, and plot. This pattern works for batteries, circuits, mechanical systems, and control loops.
+   Write the ODE, implement it as a Python function, call `solve_ivp`, plot, and check.
 
-2. **`solve_ivp` handles the hard math for you**
+2. **`solve_ivp` does the stepping, but you set the limit**
 
-   You do not need to implement Runge-Kutta or worry about step sizes. The solver adapts its step size automatically to maintain accuracy.
+   You do not need to write a Runge-Kutta method. The solver chooses its own step length for accuracy, but it cannot see a short event that it steps over. Set `max_step` shorter than the shortest event in your input.
 
 3. **Events give you engineering answers**
 
-   Instead of simulating for a fixed time and then searching for the cutoff point, the event mechanism finds the exact moment when a threshold is crossed.
+   An event finds the exact moment when a threshold is crossed.
 
 4. **Simple estimates are a useful sanity check**
 
-   The naive "capacity / average current" estimate was within 4% of the simulation result. Always compare your simulation to back-of-envelope calculations.
-
-5. **Models are only as good as their inputs**
-
-   Our polynomial voltage curve is an approximation. A real battery model would use measured data from the specific cell you are using. The structure of the simulation stays the same; only the coefficients change.
+   The estimate "capacity / average current" was within 5% of the simulation result. Always compare a simulation with a calculation you can do by hand.
 
 </Steps>
 
@@ -530,9 +518,9 @@ Now that you have a working simulator, change some parameters and see what happe
 <InArticleAd />
 
 
-In the next lesson, we apply this same workflow to electrical circuits. You will simulate RC and RLC circuits, verify time constants, and generate Bode plots that match what you would measure on a real oscilloscope.
+Next, the same workflow is applied to electrical circuits.
 
-[Simulating Electrical Circuits →](./simulating-electrical-circuits)
+[Simulating Electrical Circuits →](/education/modeling-and-simulation/simulating-electrical-circuits/)
 
 
 
