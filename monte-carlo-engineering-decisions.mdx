@@ -29,7 +29,7 @@ You design a voltage divider for 3.3 V. The calculation is correct, and the aver
 ## The Monte Carlo Idea
 
 <Card title="Why Monte Carlo Works" icon="star">
-When several uncertain inputs are multiplied and divided, an exact formula for the spread of the output is hard to find. Monte Carlo replaces the formula by counting. In each trial, every input gets a random value from its distribution, which is the description of the values it can take and how likely each one is. The output is calculated and stored. After thousands of trials, the histogram of the outputs shows how often each result happens. For distributions, see [Applied Mathematics: Probability, Statistics, and Noise](/education/applied-mathematics/probability-statistics-noise/). The result is only as good as the distributions you give it: the method cannot know that a spread was guessed.
+When uncertain inputs are multiplied and divided, an exact formula for the spread of the output is hard to find, so Monte Carlo counts instead, as you would roll two dice many times to learn how often a seven comes up. In each trial, every input gets a random value from its distribution, which is the description of the values it can take and how likely each one is. The output is calculated and stored. After thousands of trials, the histogram of the outputs shows how often each result happens. For distributions, see [Applied Mathematics: Probability, Statistics, and Noise](/education/applied-mathematics/probability-statistics-noise/). The result is only as good as the distributions you give it: the method cannot know that a spread was guessed.
 </Card>
 
 ```mermaid
@@ -318,7 +318,7 @@ print("\nPlot saved: monte_carlo_tolerance.png")
 
 <Steps>
 
-1. **Histogram spread.** The mean output is 3.33 V for all four tolerances. Only the spread changes. With 1% resistors the histogram is a narrow peak at the target. With 10% resistors it is wide, and a large part of it lies outside the limits.
+1. **Histogram spread.** The mean output is 3.33 V for all four tolerances; only the spread changes. With 1% resistors the histogram is a narrow peak at the target. With 10% resistors it is wide, and a large part of it lies outside the limits.
 
 2. **Yield numbers.** The yield is 100% with 1% and 2% resistors, 92.0% with 5% resistors and 66.7% with 10% resistors. This is the number for production planning: at a yield of 92% you must build 109 boards to ship 100.
 
@@ -338,7 +338,7 @@ Worst-case analysis assumes every component is simultaneously at its worst toler
 - Worst-case high: $R_1$ at $-5\%$, $R_2$ at $+5\%$, giving maximum $V_{out} = 3.443\,\text{V}$
 - Worst-case low: $R_1$ at $+5\%$, $R_2$ at $-5\%$, giving minimum $V_{out} = 3.220\,\text{V}$
 
-The worst case tells you that a failure is possible. It does not tell you how often it happens, because all components are almost never at their limits together. Monte Carlo gives the "how often".
+The worst case tells you that a failure is possible, not how often, because all components are almost never at their limits together. Monte Carlo gives the "how often".
 
 | Method | Output range (5% resistors) | Useful for |
 |--------|----------------------------|------------|
@@ -381,7 +381,7 @@ A Monte Carlo result is itself uncertain: another set of random numbers gives a 
 | 100,000 | Excellent | Good |
 | 1,000,000 | Overkill for means | Excellent for tail estimates |
 
-For yield estimation, you need more trials when the yield is close to 100%. To estimate 99.9% yield with confidence, you need at least 100,000 trials so that you have enough failures (about 100) to estimate the failure rate reliably.
+A yield close to 100% needs more trials. To estimate 99.9% yield with confidence, run at least 100,000 trials, so that there are enough failures (about 100) to estimate the failure rate.
 
 ## Exercises
 

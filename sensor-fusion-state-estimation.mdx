@@ -29,7 +29,7 @@ A level sensor on a tank is disturbed by waves. A gyroscope gives an angle that 
 ## The Problem with Single Sensors
 
 <Card title="Why One Sensor Is Never Enough" icon="star">
-An accelerometer can give the tilt angle from the direction of gravity, but it also measures every vibration and every push. A gyroscope measures cleanly how fast the angle changes. To get the angle you must add up its readings, and then every small error is added up too, so the result drifts without limit. The two errors are of different kinds. The accelerometer is wrong from moment to moment but right on average. The gyroscope is right from moment to moment but wrong in the long run. Fusion uses each sensor for what it does well.
+An accelerometer can give the tilt angle from the direction of gravity, but it also measures every vibration and every push. A gyroscope measures cleanly how fast the angle changes. To get the angle you must add up its readings, and every small error is added up too, so the result drifts without limit. So the accelerometer is wrong from moment to moment but right on average, and the gyroscope is right from moment to moment but wrong in the long run. Fusion uses each sensor for what it does well.
 </Card>
 
 ### Accelerometer Angle Estimation
@@ -92,7 +92,7 @@ For $\alpha = 0.98$ and $\Delta t = 0.01$ s (100 Hz), $\tau = 0.49$ s. Changes f
 <InArticleAd />
 
 
-The Kalman filter makes the same kind of mix, but it calculates the weight itself, again at every step. It keeps two things: its best estimate, and a number that says how uncertain that estimate is. When its own prediction is uncertain it leans on the measurement, and when the measurement is noisy it leans on the prediction. Each cycle has two steps.
+The Kalman filter makes the same kind of mix, but calculates the weight itself at every step. It keeps its best estimate and a number that says how uncertain that estimate is. When its own prediction is uncertain it leans on the measurement, and when the measurement is noisy it leans on the prediction. Each cycle has two steps.
 
 ```mermaid
 flowchart TD
@@ -129,7 +129,7 @@ $$\mathbf{P} = (\mathbf{I} - \mathbf{K}\mathbf{H})\mathbf{P}^-$$
 
 Here $z$ is the measurement (the accelerometer angle), $\mathbf{H}$ picks from the state the quantity that is measured, $\mathbf{R}$ is the variance of the measurement noise, and $\mathbf{I}$ is the identity matrix.
 
-For a single quantity the gain $\mathbf{K}$, called the Kalman gain, is simply $K = P / (P + R)$. An uncertain prediction (large $P$) gives a gain near 1, and the filter follows the measurement. A noisy measurement (large $R$) gives a gain near 0, and the filter keeps its prediction. For the matrix algebra, see [Applied Mathematics: Linear Algebra, Vectors, and Matrices](/education/applied-mathematics/linear-algebra-vectors-matrices/).
+For a single quantity the Kalman gain is simply $K = P / (P + R)$. An uncertain prediction (large $P$) gives a gain near 1, so the filter follows the measurement; a noisy measurement (large $R$) gives a gain near 0, so it keeps its prediction. For the matrix algebra, see [Applied Mathematics: Linear Algebra, Vectors, and Matrices](/education/applied-mathematics/linear-algebra-vectors-matrices/).
 
 ### State Vector for IMU Fusion
 
@@ -444,7 +444,7 @@ The ratio $Q/R$ decides how fast the filter reacts. A large $Q/R$ makes it fast 
 <InArticleAd />
 
 
-A full IMU has three accelerometer axes and three gyroscope axes. The state then holds three angles (roll, pitch and yaw), each with its own bias. The filter is the same, with larger matrices.
+A full IMU has three accelerometer and three gyroscope axes, so the state holds three angles (roll, pitch and yaw), each with its own bias. The filter is the same, with larger matrices.
 
 For roll and pitch, gravity gives the accelerometer a reference. For yaw, the turn about the vertical axis, gravity gives none, so a magnetometer (a compass sensor) is added. This is why many IMU modules are called 9-DOF (nine degrees of freedom): three axes each of accelerometer, gyroscope and magnetometer. The Madgwick and Mahony filters are efficient versions of this for small processors.
 

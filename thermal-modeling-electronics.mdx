@@ -56,7 +56,7 @@ Heat flows from hot to cold, as current flows from a high voltage to a low one. 
 | Thermal resistance (°C/W) | Electrical resistance (ohm) | $R_\theta$ / $R$ |
 | Thermal capacitance (J/°C) | Electrical capacitance (F) | $C_\theta$ / $C$ |
 
-Just as voltage drops across resistors in series, temperature drops across thermal resistances in series. The junction is hotter than the air by the power times the sum of the resistances:
+As voltage drops across resistors in series, temperature drops step by step across thermal resistances in series. The junction is hotter than the air by the power times the sum of the resistances:
 
 $$
 T_{\text{junction}} = T_{\text{ambient}} + P \cdot (R_{\theta,jc} + R_{\theta,cs} + R_{\theta,sa})
@@ -69,7 +69,7 @@ Here $P$ is the power turned into heat, in watts. The three resistances, in °C/
 <InArticleAd />
 
 
-The heat enters at the junction and passes through each part in turn on its way to the air. Each part has its own temperature and its own thermal capacitance. The air is so large that its temperature does not change.
+The heat enters at the junction and passes through each part in turn to the air. Each part has its own temperature and thermal capacitance; the air is so large that its temperature does not change.
 
 ```text
  heat P
@@ -487,7 +487,7 @@ The first thing it prints is the STM32 example:
 
 Your run also prints the case and heatsink temperatures and a "Time to 90%" line (1118.2 seconds for this case). They are left out above.
 
-The microcontroller at 200 mW reaches 71 °C with no heatsink. That is inside the 85 °C limit, with 14 °C of margin. The rise of 46 °C sits on top of the ambient temperature. So in an enclosure in the sun, with the air inside at 40 °C, the junction reaches 86 °C and passes the limit. A small clip-on heatsink lowers it to 35 °C in 25 °C air.
+With no heatsink the microcontroller at 200 mW reaches 71 °C, inside the 85 °C limit with 14 °C of margin. But the rise of 46 °C sits on top of the ambient temperature: in an enclosure in the sun, with the air inside at 40 °C, the junction reaches 86 °C and passes the limit. A small clip-on heatsink lowers it to 35 °C in 25 °C air.
 
 Check the simulation against the hand formula before you trust the curves. The simulated junction curve ends at 70.9 °C, and the formula gives 71.0 °C. The small gap is there because the run stops after five time constants. A run twice as long ends at 71.0 °C.
 
@@ -562,7 +562,7 @@ A thermal model predicts a junction or board temperature; the only way to know i
 
 <CardGrid>
   <Card title="Pulsed Power" icon="setting">
-  Modify the power input to be pulsed: 5 W for 100 ms, then 0 W for 900 ms (10% duty cycle, 0.5 W average). Compare the peak junction temperature to the steady-state at 0.5 W continuous. Thermal capacitance makes a big difference here.
+  Make the power pulsed: 5 W for 100 ms, then 0 W for 900 ms (10% duty cycle, 0.5 W average). Compare the peak junction temperature to the steady-state at 0.5 W continuous. Thermal capacitance makes a big difference here.
   </Card>
 
   <Card title="Hot Ambient" icon="warning">

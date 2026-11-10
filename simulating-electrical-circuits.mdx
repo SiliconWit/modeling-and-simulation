@@ -56,7 +56,7 @@ A Python tool that takes resistor, inductor and capacitor values and draws two k
   GND ---------- + ---
 ```
 
-Think of the capacitor as a tank filled through a narrow pipe, the resistor. The flow is fast while the tank is empty and slows as it fills. The capacitor voltage rises in the same way: fast at first, then more and more slowly.
+Think of the capacitor as a tank filled through a narrow pipe, the resistor: the flow is fast while the tank is empty and slows as it fills. The capacitor voltage rises in the same way.
 
 Kirchhoff's voltage law says the input voltage is shared between the resistor and the capacitor:
 
@@ -456,14 +456,14 @@ Expected output for the RC circuit:
 =======================================================
 ```
 
-The top right panel of the RC plot is the check that the simulation can be trusted. It shows the difference between the simulated curve and the formula $V_C = V_{\text{in}}(1 - e^{-t/\tau})$, which you can work by hand. The largest difference is about $3 \times 10^{-14}$ V, because the code limits the step to one five-hundredth of the run (`max_step=t_end/500`). Remove that limit and the difference grows to about 0.0001 V.
+The top right panel of the RC plot checks the simulation: it shows the difference between the simulated curve and the formula $V_C = V_{\text{in}}(1 - e^{-t/\tau})$, which you can work by hand. The largest difference is about $3 \times 10^{-14}$ V, because the code limits the step to one five-hundredth of the run (`max_step=t_end/500`). Remove that limit and the difference grows to about 0.0001 V.
 
 ## Comparing Simulation to Oscilloscope Measurements
 
 <InArticleAd />
 
 
-The simulated plots show what the instruments on a bench would show. To compare them:
+To compare the simulated plots with the instruments on a bench:
 
 <Tabs>
   <TabItem label="RC Step Response">
@@ -500,7 +500,7 @@ For the RLC circuit, you can see a resonance peak near $f_n$ when $\zeta < 0.707
 <InArticleAd />
 
 
-The damping ratio $\zeta$ decides the shape of the circuit's response. The same ratio describes a mass on a spring and a control loop, which come later in this course.
+The damping ratio $\zeta$ decides the shape of the response. The same ratio describes a mass on a spring and a control loop, later in this course.
 
 With $\zeta = 0$ (no resistance at all) the oscillation would never decay.
 
@@ -517,7 +517,7 @@ For a filter, $\zeta \approx 0.707$ is a common target (the Butterworth response
   </Card>
 
   <Card title="High-Pass Filter" icon="puzzle">
-  Modify the code to plot the voltage across the resistor instead of the capacitor. This gives you a high-pass response. The transfer function changes to $H(j\omega) = j\omega RC / (1 + j\omega RC)$.
+  Plot the voltage across the resistor instead of the capacitor: this is a high-pass response. The transfer function changes to $H(j\omega) = j\omega RC / (1 + j\omega RC)$.
   </Card>
 
   <Card title="Notch Filter" icon="rocket">

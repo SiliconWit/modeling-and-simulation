@@ -677,7 +677,7 @@ Expected auto-tuner output:
 
 **Too high:** Fast but oscillatory, excessive overshoot, potential instability.
 
-**Analogy:** Imagine pushing a shopping cart toward a target. $K_p$ is how hard you push for each meter of distance remaining. Push too gently and you approach slowly. Push too hard and you overshoot.
+**Analogy:** You push a shopping cart toward a target. $K_p$ is how hard you push for each meter still to go. Too gently and you arrive slowly; too hard and you overshoot.
   </TabItem>
 
   <TabItem label="Integral (Ki)">
@@ -688,9 +688,9 @@ Expected auto-tuner output:
 
 **Too high:** Integral windup, sustained oscillation, slow settling.
 
-**Analogy:** If the cart is stuck 10 cm from the target, the integral term gradually increases the push force until the obstacle is overcome. But if it accumulates too much, it pushes you past the target and takes a long time to unwind.
+**Analogy:** If the cart is stuck 10 cm from the target, the integral term slowly increases the push until the obstacle gives way. If it grows too much, it pushes the cart past the target and takes a long time to unwind.
 
-**Anti-windup:** When the motor voltage is saturated (at 0 V or 12 V), the integral should stop accumulating. Otherwise it "winds up" and causes a large overshoot when the saturation ends.
+**Anti-windup:** While the motor voltage is saturated (at 0 V or 12 V), the integral must stop growing. Otherwise it "winds up" and causes a large overshoot when the saturation ends.
   </TabItem>
 
   <TabItem label="Derivative (Kd)">
@@ -701,9 +701,9 @@ Expected auto-tuner output:
 
 **Too high:** Amplifies noise, causes jitter, can destabilize the system.
 
-**Analogy:** As the cart approaches the target, $K_d$ is like applying the brakes proportional to your approach speed. It prevents overshoot by slowing down early.
+**Analogy:** As the cart comes near the target, $K_d$ brakes in proportion to its speed, so it slows early and does not overshoot.
 
-**Noise sensitivity:** In real systems, the speed measurement contains noise. The derivative of noisy data is very noisy. A common fix is to use a low-pass filter on the derivative term, or to differentiate the measurement instead of the error.
+**Noise sensitivity:** A real speed measurement contains noise, and the derivative of noisy data is very noisy. A common fix is a low-pass filter on the derivative term, or to differentiate the measurement instead of the error.
   </TabItem>
 </Tabs>
 
@@ -751,7 +751,7 @@ The structure is identical. The gains transfer if the firmware uses the same uni
 <InArticleAd />
 
 
-The fourth plot in the auto-tuner output shows what happens when a load disturbance hits at 500 ms (simulating a sudden increase in friction or an external torque). A well-tuned PID controller recovers quickly. The integral term is critical here: it detects the sustained error caused by the disturbance and increases the voltage to compensate.
+The fourth plot in the auto-tuner output shows a load disturbance at 500 ms (a sudden increase in friction or an external torque). A well-tuned PID controller recovers quickly. The integral term does the work: it sees the lasting error caused by the disturbance and raises the voltage to cancel it.
 
 ## Experiments to Try
 
@@ -793,7 +793,7 @@ The fourth plot in the auto-tuner output shows what happens when a load disturba
 
 3. **Anti-windup is not optional**
 
-   Without it, the integral term grows without bound during saturation and causes massive overshoot when the system recovers. Every real PID implementation needs integral clamping.
+   Without it, the integral grows without limit during saturation and causes a large overshoot when the system recovers. Every real PID needs a limit on the integral.
 
 4. **The simulation loop matches the firmware loop**
 

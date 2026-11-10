@@ -49,7 +49,7 @@ flowchart TD
 <InArticleAd />
 
 
-A first-order system has one store of energy or material: one thermal mass, one tank, one capacitor. The air in a cold room after the compressor starts, and the speed of a motor after a voltage step, are close to first-order. After a step input the output moves quickly at first and then more and more slowly toward its final value. Two parameters describe it:
+A first-order system has one store of energy or material: one thermal mass, one tank, one capacitor. The air in a cold room after the compressor starts, and the speed of a motor after a voltage step, are close to first-order. After a step the output moves quickly at first, then more slowly toward its final value. Two parameters describe it:
 
 - **Gain** $K$: the change of the output divided by the change of the input, in output units per input unit
 - **Time constant** $\tau$, in seconds: the time to cover 63.2% of the change
@@ -99,7 +99,7 @@ The step response depends on $\zeta$:
 <InArticleAd />
 
 
-Fitting needs a measure of how far a model is from the record. For each reading, take the difference between the measurement and the model, and square it. Add all the squares. Least squares finds the parameters that make this sum as small as possible:
+Fitting needs a measure of how far a model is from the record: for each reading, square the difference between measurement and model, and add all the squares. Least squares finds the parameters that make this sum as small as possible:
 
 $$J(\theta) = \sum_{i=1}^{N} (y_i - \hat{y}(t_i; \theta))^2$$
 
@@ -486,7 +486,7 @@ print("\nPlot saved: system_identification.png")
 <InArticleAd />
 
 
-The residuals are the differences, measured minus model, at every reading. Their pattern tells you what the model is missing:
+The residuals are measured minus model at every reading. Their pattern shows what the model is missing:
 
 | Residual Pattern | Interpretation |
 |-----------------|----------------|
@@ -528,7 +528,7 @@ def load_csv_data(filename):
 # t_meas, y_meas = load_csv_data('my_step_response.csv')
 ```
 
-The rest of the fitting code works without modification. You will need to adjust the initial guesses (`p0`) and bounds based on what you expect the system to look like.
+The rest of the fitting code works as it is. Adjust the initial guesses (`p0`) and bounds to what you expect of the system.
 
 ## Connecting to PID Control
 

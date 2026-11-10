@@ -62,7 +62,7 @@ A Python tool that models one corner of a car: a quarter of the body's mass rest
   ///////////////////////   road
 ```
 
-The spring and the damper sit side by side between the body and the road. Two forces act on the body when it is away from its rest position. The spring pushes it back with a force proportional to the displacement. The damper resists the motion with a force proportional to the velocity. Newton's second law says that mass times acceleration equals the sum of these forces. With every term on one side:
+The spring and the damper sit side by side between the body and the road. Away from rest, the spring pushes the body back with a force proportional to the displacement, and the damper resists the motion with a force proportional to the velocity. By Newton's second law, mass times acceleration equals the sum of these forces. With every term on one side:
 
 $$
 m\ddot{x} + c\dot{x} + kx = 0
@@ -484,7 +484,7 @@ A phase portrait plots velocity against displacement. Time is not an axis: the s
 <Tabs>
   <TabItem label="Underdamped">
 
-The curve spirals inward to the origin. Each loop is one bounce, and the loops become smaller as the damper removes energy. Lower damping means more loops.
+The curve spirals inward: each loop is one bounce, smaller each time as the damper removes energy. Lower damping means more loops.
   </TabItem>
 
   <TabItem label="Critically Damped">
@@ -494,7 +494,7 @@ The curve goes to the origin without a loop. It is the fastest return that never
 
   <TabItem label="Overdamped">
 
-The curve also reaches the origin without a loop, but the velocity stays small all the way, so the return takes longer than in the critically damped case.
+No loop either, but the velocity stays small all the way, so the return takes longer than with critical damping.
   </TabItem>
 </Tabs>
 
@@ -511,7 +511,7 @@ A common belief is that critical damping ($\zeta = 1$) gives the fastest settlin
 
 "Settled" here means inside a band of 2% around rest, which is 1 mm for a 5 cm start. The sweep finds the shortest settling time, 470 ms, at $\zeta = 0.785$. The critically damped body needs 753 ms.
 
-With a little less damping the body moves faster, passes the rest position, and turns back. As long as that overshoot is smaller than the band (here 1.9%, less than 1 mm), the body never leaves the band again. Just below $\zeta = 0.78$ the overshoot is larger than 2%. The body then leaves the band on the far side, and the settling time jumps to 650 ms or more.
+With a little less damping the body moves faster, passes rest, and turns back. While that overshoot is smaller than the band (here 1.9%, less than 1 mm), the body never leaves the band again. Just below $\zeta = 0.78$ the overshoot is larger than 2%. The body then leaves the band on the far side, and the settling time jumps to 650 ms or more.
 
 The same trade appears when a PID controller is tuned: allowing a small overshoot often gives a faster response.
 

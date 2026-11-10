@@ -48,9 +48,9 @@ A Python script that models a single lithium-ion cell (3.0 V to 4.2 V range, 300
 <InArticleAd />
 
 
-A simulation is a model stepped forward in time. The model is a state (the few numbers that describe the system now) and a rule (how fast each number changes). Think of a water tank with a tap at the bottom: the state is the level, and the rule says the level falls at the rate the water leaves.
+A simulation is a model stepped forward in time: a state (the few numbers that describe the system now) and a rule (how fast each number changes). In a water tank with a tap at the bottom, the state is the level, and the rule says the level falls at the rate the water leaves.
 
-The computer applies the rule over a short time step to get the new state, and repeats this thousands of times. A step that is too long misses what happens inside it, and the answer is wrong with no error message. Every simulation in this course follows the same five steps.
+The computer applies the rule over a short time step to get the new state, thousands of times. A step that is too long misses what happens inside it, and the answer is wrong with no error message. Every simulation in this course follows five steps.
 
 <Steps>
 
@@ -145,7 +145,7 @@ A real cell is flatter in the middle of this curve and falls more steeply near e
 
 ### Internal Resistance
 
-Under load, the voltage at the terminals is lower than the OCV, because the current must pass through the cell's own internal resistance. The loss is the current times that resistance:
+Under load, the terminal voltage is lower than the OCV by the current times the cell's own internal resistance:
 
 $$
 V_{\text{terminal}} = V_{\text{OCV}}(\text{SOC}) - I(t) \cdot R_{\text{internal}}
@@ -158,7 +158,7 @@ For a typical 18650 cell (a common cylindrical lithium cell), $R_{\text{internal
 <InArticleAd />
 
 
-A sensor node does not draw a constant current. It sleeps most of the time and wakes to measure and transmit. The model repeats this pattern every 10 seconds:
+A sensor node sleeps most of the time and wakes to measure and transmit. The model repeats this pattern every 10 seconds:
 
 ```text
 Current draw over time (repeating pattern)
@@ -392,7 +392,7 @@ You should see output like this:
 =======================================================
 ```
 
-The simulation predicts 26.6 hours. Dividing the capacity by the average current gives $3.0 / 0.108 = 27.8$ hours. The 1.2 hours between them has a cause. During a burst, the internal resistance lowers the terminal voltage by 0.025 V, so the cell reaches the 3.0 V cutoff while 4.2% of its charge is still inside. And 4.2% of 27.8 hours is 1.2 hours.
+The simulation predicts 26.6 hours; capacity divided by average current gives $3.0 / 0.108 = 27.8$ hours. The gap has a cause: during a burst the internal resistance lowers the terminal voltage by 0.025 V, so the cell reaches the 3.0 V cutoff with 4.2% of its charge still inside, and 4.2% of 27.8 hours is 1.2 hours.
 
 ### Can you trust the answer?
 
@@ -472,7 +472,7 @@ Without it, you only get the solver's own time steps, which are unevenly spaced.
 
 <CardGrid>
   <Card title="Increase Active Current" icon="warning">
-  Change `ACTIVE_CURRENT_A` to `1.0` (1 A bursts). How much does the runtime drop? Notice that the voltage sags more during active periods because of the higher resistive drop across `R_INTERNAL`.
+  Change `ACTIVE_CURRENT_A` to `1.0` (1 A bursts). How much does the runtime drop? The voltage sags more in each burst, because the drop across `R_INTERNAL` doubles.
   </Card>
 
   <Card title="Change Duty Cycle" icon="setting">

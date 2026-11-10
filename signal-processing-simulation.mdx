@@ -29,7 +29,7 @@ A pressure sensor on a pump line gives a reading that jumps by half a bar from o
 ## Digital Filter Fundamentals
 
 <Card title="The Core Idea" icon="star">
-A digital filter is a small calculation done on every new reading. It takes the newest reading, written $x[n]$, and some earlier readings, $x[n-1]$, $x[n-2]$, and combines them into one output value, $y[n]$. Here $n$ counts the readings. You can describe the same filter by its difference equation (the calculation itself), by its frequency response (which frequencies pass and which are weakened), or by its response to one sudden change (how late the output is).
+A digital filter is a small calculation done on every new reading: it combines the newest reading, $x[n]$, and some earlier ones, $x[n-1]$, $x[n-2]$, into one output value, $y[n]$. Here $n$ counts the readings. You can describe the same filter by its difference equation (the calculation itself), by its frequency response (which frequencies pass and which are weakened), or by its response to one sudden change (how late the output is).
 </Card>
 
 There are two families. A FIR filter (finite impulse response) uses only readings. An IIR filter (infinite impulse response) also uses its own earlier outputs, as a running total does.
@@ -80,7 +80,7 @@ $$y[n] = \frac{1}{M}\sum_{k=0}^{M-1} x[n-k]$$
 
 It is a low-pass filter: slow changes pass and fast changes are weakened. Random noise falls by a factor of $\sqrt{M}$, so 50 readings give about 7 times less noise.
 
-The price is delay. After a sudden real change the mean still holds old readings, so it shows 90% of the change only after $0.9M$ readings. At 1,000 readings per second and $M = 50$ that is about 45 ms. An event shorter than the window is treated worse: a pressure spike that lasts 20 ms is shown at 40% of its height. So choose $M$ from the fastest real change you must see, not from how smooth the line looks.
+The price is delay. After a sudden real change the mean still holds old readings, so it shows 90% of the change only after $0.9M$ readings: about 45 ms at 1,000 readings per second and $M = 50$. An event shorter than the window is treated worse: a 20 ms pressure spike is shown at 40% of its height. So choose $M$ from the fastest real change you must see, not from how smooth the line looks.
 
 The moving average separates signal from noise only gently. It removes completely the frequencies that are multiples of $f_s / M$, where $f_s$ is the sample rate in Hz. For the mathematics of frequencies and the FFT, see [Applied Mathematics: Fourier Analysis and the Frequency Domain](/education/applied-mathematics/fourier-analysis-frequency-domain/).
 
@@ -118,7 +118,7 @@ This returns `(b, a)` coefficient arrays that you can use directly in `scipy.sig
 
 Sometimes the ADC (analog-to-digital converter, the part that turns a voltage into a number) runs much faster than you need. An ADC that samples at 10 kHz for a temperature loop that updates at 100 Hz gives 100 times more data than necessary. Decimation lowers the sample rate by keeping every $M$-th sample.
 
-There is a trap. A signal sampled $f_s$ times a second can carry frequencies only up to $f_s / 2$, the Nyquist frequency. Anything faster that is still in the signal when you drop samples does not vanish. It comes back as a false slow signal, called an alias, and no later filter can remove it. So filter first, then drop samples. The program below does this:
+The trap: a signal sampled $f_s$ times a second can carry frequencies only up to $f_s / 2$, the Nyquist frequency. Anything faster still in the signal when you drop samples does not vanish: it comes back as a false slow signal, an alias, that no later filter can remove. A wheel in a film that seems to turn slowly backwards is the same effect. So filter first, then drop samples, as the program below does:
 
 ```text
   ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
@@ -376,7 +376,7 @@ print("\nPlot saved: noise_filter_designer.png")
 <InArticleAd />
 
 
-The filter coefficients printed by the code can be used in C as they are. This function is the difference equation, written for an MCU:
+The printed coefficients can be used in C as they are. This function is the difference equation for an MCU:
 
 ```c
 // IIR filter implementation for embedded systems
